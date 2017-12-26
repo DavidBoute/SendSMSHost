@@ -10,12 +10,12 @@ namespace SendSMSHost.Models
         public string Id { get; set; }
         public string Message { get; set; }
         public string TimeStamp { get; set; }
-        public int Status_Id { get; set; }
-        public string Status_Name { get; set; }
-        public string Contact_Id { get; set; }
-        public string Contact_FirstName { get; set; }
-        public string Contact_LastName { get; set; }
-        public string Contact_Number { get; set; }
+        public int StatusId { get; set; }
+        public string StatusName { get; set; }
+        public string ContactId { get; set; }
+        public string ContactFirstName { get; set; }
+        public string ContactLastName { get; set; }
+        public string ContactNumber { get; set; }
     }
 
     public class ContactDTO

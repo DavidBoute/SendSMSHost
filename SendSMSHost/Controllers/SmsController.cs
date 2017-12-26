@@ -1,15 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
+
 using SendSMSHost.Models;
+
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 
 namespace SendSMSHost.Controllers
 {
@@ -20,18 +22,7 @@ namespace SendSMSHost.Controllers
         // GET: api/Sms
         public IQueryable<SmsDTO> GetSms()
         {
-            var sms = db.Sms.Select(x => new SmsDTO
-            {
-                Id = x.Id.ToString(),
-                Message = x.Message,
-                Status_Id = x.StatusId,
-                Status_Name = x.Status.Name,
-                Contact_Id = x.ContactId.ToString(),
-                Contact_FirstName = x.Contact.FirstName,
-                Contact_LastName = x.Contact.LastName,
-                Contact_Number = x.Contact.Number,
-                TimeStamp = x.TimeStamp.ToString()
-            });
+            var sms = db.Sms.OrderBy(x=> x.TimeStamp).ProjectTo<SmsDTO>();
 
             return sms;
         }
@@ -40,18 +31,7 @@ namespace SendSMSHost.Controllers
         [ResponseType(typeof(SmsDTO))]
         public async Task<IHttpActionResult> GetSms(Guid id)
         {
-            var sms = await db.Sms.Select(x => new SmsDTO
-                {
-                    Id = x.Id.ToString(),
-                    Message = x.Message,
-                    Status_Id = x.StatusId,
-                    Status_Name = x.Status.Name,
-                    Contact_Id = x.ContactId.ToString(),
-                    Contact_FirstName = x.Contact.FirstName,
-                    Contact_LastName = x.Contact.LastName,
-                    Contact_Number = x.Contact.Number,
-                    TimeStamp = x.TimeStamp.ToString()
-                })
+            var sms = await db.Sms.ProjectTo<SmsDTO>()
                 .SingleOrDefaultAsync(x => x.Id == id.ToString());
 
             if (sms == null)
@@ -64,18 +44,15 @@ namespace SendSMSHost.Controllers
 
         // PUT: api/Sms/5
         [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> PutSms(Guid id, Sms sms)
+        public async Task<IHttpActionResult> PutSms(Guid id, SmsDTO smsDTO)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (id != sms.Id)
-            {
-                return BadRequest();
-            }
-
+            Sms sms = Mapper.Map<Sms>(smsDTO);
+            db.Set<Sms>().Attach(sms);
             db.Entry(sms).State = EntityState.Modified;
 
             try
@@ -94,7 +71,7 @@ namespace SendSMSHost.Controllers
                 }
             }
 
-            return StatusCode(HttpStatusCode.NoContent);
+            return Ok(smsDTO);
         }
 
         // POST: api/Sms
@@ -106,15 +83,11 @@ namespace SendSMSHost.Controllers
                 return BadRequest(ModelState);
             }
 
-            var sms = new Sms
-            {
-                Id = new Guid(smsDTO.Id),
-                Message = smsDTO.Message,
-                ContactId = new Guid(smsDTO.Contact_Id),
-                StatusId = smsDTO.Status_Id,
-                TimeStamp = DateTime.Parse(smsDTO.TimeStamp)
-            };
+            Sms sms = Mapper.Map<Sms>(smsDTO);
 
+            sms.Id = Guid.NewGuid();
+            sms.TimeStamp = DateTime.Now;
+            sms.Status = await db.Status.SingleOrDefaultAsync(x => x.Name == "Created");
             db.Sms.Add(sms);
 
             try
@@ -133,14 +106,20 @@ namespace SendSMSHost.Controllers
                 }
             }
 
-            return CreatedAtRoute("DefaultApi", new { id = sms.Id }, sms);
+            smsDTO = Mapper.Map<SmsDTO>
+                (
+                    await db.Sms.ProjectTo<SmsDTO>()
+                        .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString())
+                );
+            return CreatedAtRoute("DefaultApi", new { id = smsDTO.Id }, smsDTO);
         }
 
         // DELETE: api/Sms/5
-        [ResponseType(typeof(Sms))]
-        public async Task<IHttpActionResult> DeleteSms(Guid id)
+        [ResponseType(typeof(void))]
+        public async Task<IHttpActionResult> DeleteSms(string id)
         {
-            Sms sms = await db.Sms.FindAsync(id);
+            Guid guid = new Guid(id);
+            Sms sms = await db.Sms.FindAsync(guid);
             if (sms == null)
             {
                 return NotFound();
@@ -149,7 +128,7 @@ namespace SendSMSHost.Controllers
             db.Sms.Remove(sms);
             await db.SaveChangesAsync();
 
-            return Ok(sms);
+            return Ok();
         }
 
         protected override void Dispose(bool disposing)

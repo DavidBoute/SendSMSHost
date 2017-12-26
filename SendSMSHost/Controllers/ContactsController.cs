@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
 using SendSMSHost.Models;
+using AutoMapper.QueryableExtensions;
 
 namespace SendSMSHost.Controllers
 {
@@ -18,16 +19,20 @@ namespace SendSMSHost.Controllers
         private SendSMSHostContext db = new SendSMSHostContext();
 
         // GET: api/Contacts
-        public IQueryable<Contact> GetContacts()
+        public IQueryable<ContactDTO> GetContacts()
         {
-            return db.Contacts;
+            var contact = db.Contacts.ProjectTo<ContactDTO>();
+
+            return contact;
         }
 
         // GET: api/Contacts/5
         [ResponseType(typeof(Contact))]
         public async Task<IHttpActionResult> GetContact(Guid id)
         {
-            Contact contact = await db.Contacts.FindAsync(id);
+            var contact = await db.Contacts.ProjectTo<ContactDTO>()
+                .SingleOrDefaultAsync(x => x.Id == id.ToString());
+
             if (contact == null)
             {
                 return NotFound();

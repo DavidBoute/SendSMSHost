@@ -1,0 +1,28 @@
+﻿@model SendSMSHost.ViewModels.SyncIndexViewModel
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Index</h2>
+<table>
+    <tr>
+        <td>Prefix:</td>
+        <td>@Model.Prefix</td>
+    </tr>
+    <tr>
+        <td>Host:</td>
+        <td>@Model.Host</td>
+    </tr>
+    <tr>
+        <td>Port:</td>
+        <td>@Model.Port</td>
+    </tr>
+    <tr>
+        <td>Path:</td>
+        <td>@Model.Path</td>
+    </tr>
+    <tr>
+        <td>QR code:</td>
+        <td><img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.ImageByteArray))" height="200" width="200"/></td>
+    </tr>
+</table>
