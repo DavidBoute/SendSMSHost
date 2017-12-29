@@ -5,7 +5,8 @@
 
 <h2>IndexVue</h2>
 
-<article id="app" class="row">
+<div id="targetDiv"></div>
+<article id="app" class="row" v-cloak>
     <!--Modal voor maken nieuwe sms op basis van bestaand contact-->
     <modal-new-sms-contact v-on:close="showNewSmsContactModal = false" v-bind:show="showNewSmsContactModal" v-bind:sms="sms" v-bind:contacts="contacts"></modal-new-sms-contact>
 
@@ -37,67 +38,67 @@
         </nav>
     </header>
     <article v-if="currentSms" class="col-md-4">
-            <h3>Details</h3>
-            <div v-if="editMode" class="form-group">
-                <table>
-                    <tr>
-                        <td>Contact:</td>
-                        <td>
-                            <select v-model="currentSms.ContactId" class="form-control"
-                                    v-on:change="currentSmsSelectedContactChanged">
-                                <option v-for="contact in contacts"
-                                        v-bind:value="contact.Id">
-                                    {{ contact.FirstName + ' ' + contact.LastName }}
-                                </option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Contact First Name:</td>
-                        <td>{{ currentSms.ContactFirstName}}</td>
-                    </tr>
-                    <tr>
-                        <td>Contact Last Name:</td>
-                        <td>{{ currentSms.ContactLastName}}</td>
-                    </tr>
-                    <tr>
-                        <td>Nummer:</td>
-                        <td>{{ currentSms.ContactNumber}}</td>
-                    </tr>
-                    <tr>
-                        <td>Bericht:</td>
-                        <td><textarea v-model="currentSms.Message" class="form-control"> </textarea></td>
-                    </tr>
-                    <tr>
-                        <td>Status:</td>
-                        <td>{{ currentSms.StatusName}}</td>
-                    </tr>
-                </table>
-                <button v-on:click="saveEdit" class="btn btn-primary">Save</button>
-            </div>
-            <div v-else>
-                <table>
-                    <tr>
-                        <td>Contact:</td>
-                        <td class="smsContactName">{{  currentSms.ContactFirstName + ' ' + currentSms.ContactLastName}}</td>
-                    </tr>
-                    <tr>
-                        <td>Nummer:</td>
-                        <td class="sms">{{ currentSms.ContactNumber}}</td>
-                    </tr>
-                    <tr>
-                        <td>Bericht:</td>
-                        <td>{{ currentSms.Message}}</td>
-                    </tr>
-                    <tr>
-                        <td>Status:</td>
-                        <td>{{ currentSms.StatusName}}</td>
-                    </tr>
-                </table>
-                <button v-on:click="toEditMode(true)" class="btn btn-primary">Edit</button>
-                <button v-on:click="deleteBook()" class="btn btn-danger">Delete</button>
-            </div>
-</article>
+        <h3>Details</h3>
+        <div v-if="editMode" class="form-group">
+            <table>
+                <tr>
+                    <td>Contact:</td>
+                    <td>
+                        <select v-model="currentSms.ContactId" class="form-control"
+                                v-on:change="currentSmsSelectedContactChanged">
+                            <option v-for="contact in contacts"
+                                    v-bind:value="contact.Id">
+                                {{ contact.FirstName + ' ' + contact.LastName }}
+                            </option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Contact First Name:</td>
+                    <td>{{ currentSms.ContactFirstName}}</td>
+                </tr>
+                <tr>
+                    <td>Contact Last Name:</td>
+                    <td>{{ currentSms.ContactLastName}}</td>
+                </tr>
+                <tr>
+                    <td>Nummer:</td>
+                    <td>{{ currentSms.ContactNumber}}</td>
+                </tr>
+                <tr>
+                    <td>Bericht:</td>
+                    <td><textarea v-model="currentSms.Message" class="form-control"> </textarea></td>
+                </tr>
+                <tr>
+                    <td>Status:</td>
+                    <td>{{ currentSms.StatusName}}</td>
+                </tr>
+            </table>
+            <button v-on:click="saveEdit" class="btn btn-primary">Save</button>
+        </div>
+        <div v-else>
+            <table>
+                <tr>
+                    <td>Contact:</td>
+                    <td class="smsContactName">{{  currentSms.ContactFirstName + ' ' + currentSms.ContactLastName}}</td>
+                </tr>
+                <tr>
+                    <td>Nummer:</td>
+                    <td class="sms">{{ currentSms.ContactNumber}}</td>
+                </tr>
+                <tr>
+                    <td>Bericht:</td>
+                    <td>{{ currentSms.Message}}</td>
+                </tr>
+                <tr>
+                    <td>Status:</td>
+                    <td>{{ currentSms.StatusName}}</td>
+                </tr>
+            </table>
+            <button v-on:click="toEditMode(true)" class="btn btn-primary">Edit</button>
+            <button v-on:click="deleteBook()" class="btn btn-danger">Delete</button>
+        </div>
+    </article>
 </article>
 
 @section scripts{
@@ -233,6 +234,18 @@
         </transition>
     </script>
 
+    <!--Reference to EventSource code -->
+    <script src="~/Scripts/EventSource.js"></script>
+
     <!--Reference to Vue code -->
     <script src="~/Scripts/App.js"></script>
+
+    <script type="text/javascript">
+        var clientName;
+        window.onload = function ()
+        {
+            clientName = 'web' + Date.now();
+            startEventSource()
+        }
+    </script>
 }

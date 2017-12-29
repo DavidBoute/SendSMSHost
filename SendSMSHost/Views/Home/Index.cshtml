@@ -22,36 +22,3 @@
         <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301872">Learn more &raquo;</a></p>
     </div>
 </div>
-
-<a href="javascript:initialize();">Click Me To See Magic</a>
-<div id="targetDiv"></div>
-
-<script>
-
-
-    function initialize() {
-        alert("called");
-
-        if (window.EventSource == undefined) {
-            // If not supported
-            document.getElementById('targetDiv').innerHTML = "Your browser doesn't support Server Sent Events.";
-            return;
-        } else {
-            var source = new EventSource('../Home/Message');
-
-            source.onopen = function (event) {
-                document.getElementById('targetDiv').innerHTML += 'Connection Opened.<br>';
-            };
-
-            source.onerror = function (event) {
-                if (event.eventPhase == EventSource.CLOSED) {
-                    document.getElementById('targetDiv').innerHTML += 'Connection Closed.<br>';
-                }
-            };
-
-            source.onmessage = function (event) {
-                document.getElementById('targetDiv').innerHTML += event.data + '<br>';
-            };
-        }
-    }
-</script>  

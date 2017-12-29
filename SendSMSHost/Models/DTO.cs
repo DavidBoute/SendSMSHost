@@ -32,4 +32,10 @@ namespace SendSMSHost.Models
         public int Id { get; set; }
         public string Name { get; set; }
     }
+
+    public class SmsDTOWithClient
+    {
+        public SmsDTO SmsDTO { get; set; }
+        public string Client { get; set; }
+    }
 }

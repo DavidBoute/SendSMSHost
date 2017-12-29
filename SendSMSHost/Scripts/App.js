@@ -34,7 +34,7 @@ Vue.component('modal-new-sms-contact', {
             var ajaxHeaders = new Headers();
             ajaxHeaders.append("Content-Type", "application/json");
             var ajaxConfig = {
-                body: JSON.stringify(self.newSms),
+                body: JSON.stringify({ SmsDTO: self.newSms, Client: clientName }),
                 headers: ajaxHeaders
             }
 
@@ -103,7 +103,7 @@ Vue.component('modal-new-sms-number', {
             var ajaxHeaders = new Headers();
             ajaxHeaders.append("Content-Type", "application/json");
             var ajaxConfig = {
-                body: JSON.stringify(self.newSms),
+                body: JSON.stringify({ SmsDTO: self.newSms, Client: clientName }),
                 headers: ajaxHeaders
             }
 
@@ -255,7 +255,7 @@ var app = new Vue({
             var ajaxHeaders = new Headers();
             ajaxHeaders.append("Content-Type", "application/json");
             var ajaxConfig = {
-                body: JSON.stringify(self.currentSms),
+                body: JSON.stringify({ SmsDTO: self.currentSms, Client: clientName }),
                 headers: ajaxHeaders
             }
             ajaxConfig.method = 'PUT';
@@ -295,7 +295,16 @@ var app = new Vue({
         deleteBook: function ()
         {
             self = this;
-            fetch(`${apiURL}Sms/${self.currentSms.Id}`, { method: 'DELETE' })
+            var ajaxHeaders = new Headers();
+            ajaxHeaders.append("Content-Type", "application/json");
+            var ajaxConfig = {
+                body: JSON.stringify({ SmsDTO: null, Client: clientName }),
+                headers: ajaxHeaders
+            }
+            ajaxConfig.method = 'DELETE';
+            var myRequest = new Request(`${apiURL}Sms/${self.currentSms.Id}`, ajaxConfig)
+
+            fetch(myRequest)
                 .then(function ()
                 {
                     self.sms.forEach(function (s, i)

@@ -199,6 +199,7 @@
     <Compile Include="Areas\HelpPage\SampleGeneration\TextSample.cs" />
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="Controllers\ContactsController.cs" />
+    <Compile Include="Controllers\EventSourceController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\SmsController.cs" />
     <Compile Include="Controllers\StatusController.cs" />
@@ -267,6 +268,7 @@
     <Content Include="Scripts\App.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="Scripts\EventSource.js" />
     <Content Include="Scripts\jquery-3.2.1.js" />
     <Content Include="Scripts\jquery-3.2.1.min.js" />
     <Content Include="Scripts\jquery-3.2.1.slim.js" />
@@ -296,6 +298,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Views\EventSource\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

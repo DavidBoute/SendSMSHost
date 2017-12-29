@@ -16,24 +16,6 @@ textarea {
     max-width: 280px;
 }
 
-.smsContactNumber {
-    color: darkblue;
-    font-size: small;
-}
-
-.smsContactName {
-    color: darkred;
-    font-style: italic;
-    font-size: small;
-}
-.smsMessage {
-    color: gray;
-    font-size: small;
-    font-style: italic;
-}
-.smsTimestamp {
-    color: gray;
-    font-size: small;
-    font-style: italic;
-    text-align:right;
+[v-cloak] {
+    display: none;
 }

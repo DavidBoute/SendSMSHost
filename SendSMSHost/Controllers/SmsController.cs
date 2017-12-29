@@ -44,12 +44,15 @@ namespace SendSMSHost.Controllers
 
         // PUT: api/Sms/5
         [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> PutSms(Guid id, SmsDTO smsDTO)
+        public async Task<IHttpActionResult> PutSms(Guid id, SmsDTOWithClient smsDTOWithClient)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+
+            SmsDTO smsDTO = smsDTOWithClient.SmsDTO;
+            string client = smsDTOWithClient.Client;
 
             Sms sms = Mapper.Map<Sms>(smsDTO);
             db.Set<Sms>().Attach(sms);
@@ -58,6 +61,8 @@ namespace SendSMSHost.Controllers
             try
             {
                 await db.SaveChangesAsync();
+                EventSourceController eventSourceController = new EventSourceController();
+                eventSourceController.Ping(client, "PUT");
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -76,12 +81,15 @@ namespace SendSMSHost.Controllers
 
         // POST: api/Sms
         [ResponseType(typeof(SmsDTO))]
-        public async Task<IHttpActionResult> PostSms(SmsDTO smsDTO)
+        public async Task<IHttpActionResult> PostSms(SmsDTOWithClient smsDTOWithClient)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+
+            SmsDTO smsDTO = smsDTOWithClient.SmsDTO;
+            string client = smsDTOWithClient.Client;
 
             // Indien ContactId == null dan opzoeken of nieuw contact voorzien
             if (String.IsNullOrWhiteSpace(smsDTO.ContactId))
@@ -125,6 +133,8 @@ namespace SendSMSHost.Controllers
             try
             {
                 await db.SaveChangesAsync();
+                EventSourceController eventSourceController = new EventSourceController();
+                eventSourceController.Ping(client, "POST");
             }
             catch (DbUpdateException)
             {
@@ -148,17 +158,34 @@ namespace SendSMSHost.Controllers
 
         // DELETE: api/Sms/5
         [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> DeleteSms(string id)
+        public async Task<IHttpActionResult> DeleteSms(Guid id, SmsDTOWithClient smsDTOWithClient)
         {
-            Guid guid = new Guid(id);
-            Sms sms = await db.Sms.FindAsync(guid);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // SmsDTO smsDTO = smsDTOWithClient.SmsDTO; //niet nodig, is null
+            string client = smsDTOWithClient.Client;
+
+            Sms sms = await db.Sms.FindAsync(id);
             if (sms == null)
             {
                 return NotFound();
             }
 
             db.Sms.Remove(sms);
-            await db.SaveChangesAsync();
+            try
+            {
+                await db.SaveChangesAsync();
+                EventSourceController eventSourceController = new EventSourceController();
+                eventSourceController.Ping(client, "DELETE");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
 
             return Ok();
         }
