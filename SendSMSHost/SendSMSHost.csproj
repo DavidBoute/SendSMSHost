@@ -210,6 +210,10 @@
     <Compile Include="Migrations\201712212030157_Initial.Designer.cs">
       <DependentUpon>201712212030157_Initial.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201712291307373_AnonymousContacts.cs" />
+    <Compile Include="Migrations\201712291307373_AnonymousContacts.Designer.cs">
+      <DependentUpon>201712291307373_AnonymousContacts.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Contact.cs" />
     <Compile Include="Models\DTO.cs" />
@@ -260,6 +264,7 @@
     <Content Include="Content\bootstrap-theme.min.css.map" />
     <Content Include="Content\bootstrap-theme.css.map" />
     <None Include="Scripts\jquery-3.2.1.intellisense.js" />
+    <Content Include="Scripts\App.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\jquery-3.2.1.js" />
@@ -300,6 +305,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\201712212030157_Initial.resx">
       <DependentUpon>201712212030157_Initial.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201712291307373_AnonymousContacts.resx">
+      <DependentUpon>201712291307373_AnonymousContacts.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

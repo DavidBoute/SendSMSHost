@@ -24,6 +24,7 @@ namespace SendSMSHost.Models
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Number { get; set; }
+        public bool IsAnonymous { get; set; }
     }
 
     public class StatusDTO

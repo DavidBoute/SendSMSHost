@@ -1,4 +1,5 @@
 ﻿using SendSMSHost.ViewModels;
+using System.Collections.Specialized;
 using System.Net;
 using System.Net.Sockets;
 using System.Web.Mvc;
@@ -19,16 +20,19 @@ namespace SendSMSHost.Controllers
                 if (ip.AddressFamily == AddressFamily.InterNetwork)
                 {
                     localIP = ip.ToString();
-                    break; // misschien eerst testen of het een lokaal ip is?
+                    if (localIP.StartsWith("192.168.") || localIP.StartsWith("10.") || localIP.StartsWith("127.0.0."))
+                        break;
                 }
             }
 
+            string port = Request.ServerVariables["SERVER_PORT"];
+            port = "45455"; // Manuele waarde -> zie Conveyor
 
             SyncIndexViewModel VM = new SyncIndexViewModel
             {
                 Prefix = "http://",
                 Host = localIP,
-                Port = "45455",
+                Port = port,
                 Path = "api/"
             };
             return View(VM);

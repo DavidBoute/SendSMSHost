@@ -1,4 +1,5 @@
-﻿using QRCoder;
+﻿using Newtonsoft.Json;
+using QRCoder;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -21,8 +22,19 @@ namespace SendSMSHost.ViewModels
         {
             get
             {
+                object obj = new
+                {
+                    Prefix = this.Prefix,
+                    Host = this.Host,
+                    Port = this. Port,
+                    Path = this. Path
+                };
+
+                string json = JsonConvert.SerializeObject(obj);
+                
+                // QR Code genereren
                 QRCodeGenerator qrGenerator = new QRCodeGenerator();
-                QRCodeData qrCodeData = qrGenerator.CreateQrCode("The text which should be encoded.", QRCodeGenerator.ECCLevel.Q);
+                QRCodeData qrCodeData = qrGenerator.CreateQrCode(json, QRCodeGenerator.ECCLevel.Q);
                 QRCode qrCode = new QRCode(qrCodeData);
                 Bitmap qrCodeImage = qrCode.GetGraphic(20);
 

@@ -22,7 +22,7 @@ namespace SendSMSHost.Controllers
         // GET: api/Sms
         public IQueryable<SmsDTO> GetSms()
         {
-            var sms = db.Sms.OrderBy(x=> x.TimeStamp).ProjectTo<SmsDTO>();
+            var sms = db.Sms.OrderBy(x => x.TimeStamp).ProjectTo<SmsDTO>();
 
             return sms;
         }
@@ -81,6 +81,38 @@ namespace SendSMSHost.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            // Indien ContactId == null dan opzoeken of nieuw contact voorzien
+            if (String.IsNullOrWhiteSpace(smsDTO.ContactId))
+            {
+                // kijken of nummer al in gebruik is
+                Contact contact = db.Contacts.SingleOrDefault(x => x.Number == smsDTO.ContactNumber);
+                if (contact == null) // nieuw contact maken
+                {
+                    contact = new Contact
+                    {
+                        Id = Guid.NewGuid(),
+                        FirstName = smsDTO.ContactNumber,
+                        LastName = "",
+                        Number = smsDTO.ContactNumber,
+                        IsAnonymous = true
+                    };
+
+                    db.Contacts.Add(contact);
+                    try
+                    {
+                        await db.SaveChangesAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        throw;
+                    }
+                }
+                smsDTO.ContactId = contact.Id.ToString();
+                smsDTO.ContactFirstName = contact.FirstName;
+                smsDTO.ContactLastName = contact.LastName;
             }
 
             Sms sms = Mapper.Map<Sms>(smsDTO);
