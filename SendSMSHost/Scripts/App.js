@@ -66,8 +66,11 @@ Vue.component('modal-new-sms-contact', {
                     self.newSms.ContactNumber = null;
                     self.newSms.Message = null;
                     self.newSms.TimeStamp = null;
+
+                    // andere clients inlichten
+                    SSEHub.server.notifyChange({Client: clientName, Operation: 'POST', SmsDTO: res});
                 })
-                .catch(err => console.error('Fout: ' + err));;
+                .catch(err => console.error('Fout: ' + err));
 
             this.$emit('close');
         }
@@ -136,6 +139,8 @@ Vue.component('modal-new-sms-number', {
                     self.newSms.Message = null;
                     self.newSms.TimeStamp = null;
 
+                    // andere clients inlichten
+                    SSEHub.server.notifyChange({ Client: clientName, Operation: 'POST', SmsDTO: res });
                 })
                 .catch(err => console.error('Fout: ' + err));;
 
@@ -288,6 +293,9 @@ var app = new Vue({
                     self.currentSms.TimeStamp = res.TimeStamp;
                     self.currentSms.StatusName = res.StatusName;
 
+                    // andere clients inlichten
+                    SSEHub.server.notifyChange({ Client: clientName, Operation: 'PUT', SmsDTO: res });
+
                     self.editMode = false;
                 })
                 .catch(err => console.error('Fout: ' + err));;
@@ -307,6 +315,10 @@ var app = new Vue({
             fetch(myRequest)
                 .then(function ()
                 {
+                    // andere clients inlichten
+                    // hier voor de operatie opdat self.currentSms op null gezet wordt
+                    SSEHub.server.notifyChange({ Client: clientName, Operation: 'DELETE', SmsDTO: self.currentSms });
+
                     self.sms.forEach(function (s, i)
                     {
                         if (s.Id == self.currentSms.Id)

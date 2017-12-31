@@ -12,6 +12,8 @@ using SendSMSHost.Models;
 
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using SendSMSHost.SignalR;
+using Microsoft.AspNet.SignalR;
 
 namespace SendSMSHost.Controllers
 {
@@ -61,8 +63,6 @@ namespace SendSMSHost.Controllers
             try
             {
                 await db.SaveChangesAsync();
-                EventSourceController eventSourceController = new EventSourceController();
-                eventSourceController.Ping(client, "PUT");
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -88,6 +88,7 @@ namespace SendSMSHost.Controllers
                 return BadRequest(ModelState);
             }
 
+            smsDTOWithClient.Operation = "POST";
             SmsDTO smsDTO = smsDTOWithClient.SmsDTO;
             string client = smsDTOWithClient.Client;
 
@@ -133,8 +134,6 @@ namespace SendSMSHost.Controllers
             try
             {
                 await db.SaveChangesAsync();
-                EventSourceController eventSourceController = new EventSourceController();
-                eventSourceController.Ping(client, "POST");
             }
             catch (DbUpdateException)
             {
@@ -148,12 +147,13 @@ namespace SendSMSHost.Controllers
                 }
             }
 
-            smsDTO = Mapper.Map<SmsDTO>
+            smsDTOWithClient.SmsDTO = Mapper.Map<SmsDTO>
                 (
                     await db.Sms.ProjectTo<SmsDTO>()
                         .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString())
                 );
-            return CreatedAtRoute("DefaultApi", new { id = smsDTO.Id }, smsDTO);
+
+            return CreatedAtRoute("DefaultApi", new { id = smsDTO.Id }, smsDTOWithClient.SmsDTO);
         }
 
         // DELETE: api/Sms/5
@@ -178,8 +178,6 @@ namespace SendSMSHost.Controllers
             try
             {
                 await db.SaveChangesAsync();
-                EventSourceController eventSourceController = new EventSourceController();
-                eventSourceController.Ping(client, "DELETE");
             }
             catch (Exception ex)
             {

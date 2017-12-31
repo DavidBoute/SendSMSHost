@@ -37,5 +37,6 @@ namespace SendSMSHost.Models
     {
         public SmsDTO SmsDTO { get; set; }
         public string Client { get; set; }
+        public string Operation { get; set; }
     }
 }
