@@ -16,7 +16,7 @@ namespace SendSMSHost.SignalR
 
         public void NotifyChange(SmsDTOWithClient smsDTOWithClient)
         {
-            Clients.All.notifyChangeToPage(smsDTOWithClient);
+            Clients.Others.notifyChangeToPage(smsDTOWithClient);
         }
     }
 }

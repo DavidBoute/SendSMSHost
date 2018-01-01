@@ -20,6 +20,9 @@ namespace SendSMSHost
             BundleConfig.RegisterBundles(BundleTable.Bundles);
 
             App_Start.AutoMapperConfig.Initialize();
+
+            App_Start.ScheduledTask scheduledTask = new App_Start.ScheduledTask();
+            scheduledTask.Start();
         }
     }
 }

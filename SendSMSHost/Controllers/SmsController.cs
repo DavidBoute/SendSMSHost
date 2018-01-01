@@ -1,19 +1,14 @@
-﻿using System;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using SendSMSHost.Models;
+using System;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
-
-using SendSMSHost.Models;
-
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using SendSMSHost.SignalR;
-using Microsoft.AspNet.SignalR;
 
 namespace SendSMSHost.Controllers
 {
@@ -24,9 +19,18 @@ namespace SendSMSHost.Controllers
         // GET: api/Sms
         public IQueryable<SmsDTO> GetSms()
         {
-            var sms = db.Sms.OrderBy(x => x.TimeStamp).ProjectTo<SmsDTO>();
+            var smsList = db.Sms.OrderBy(x => x.TimeStamp).ProjectTo<SmsDTO>();
 
-            return sms;
+            return smsList;
+        }
+
+        // GET: api/SmsPhone
+        public IQueryable<SmsDTO> GetSmsPhone()
+        {
+            var statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
+            var smsList = db.Sms.Where(x => x.StatusId != statusCreated.Id).OrderBy(x => x.TimeStamp).ProjectTo<SmsDTO>();
+
+            return smsList;
         }
 
         // GET: api/Sms/5
@@ -44,17 +48,14 @@ namespace SendSMSHost.Controllers
             return Ok(sms);
         }
 
-        // PUT: api/Sms/5
+        // PUT: api/Sms
         [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> PutSms(Guid id, SmsDTOWithClient smsDTOWithClient)
+        public async Task<IHttpActionResult> PutSms(SmsDTO smsDTO)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
-            SmsDTO smsDTO = smsDTOWithClient.SmsDTO;
-            string client = smsDTOWithClient.Client;
 
             Sms sms = Mapper.Map<Sms>(smsDTO);
             db.Set<Sms>().Attach(sms);
@@ -66,7 +67,7 @@ namespace SendSMSHost.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!SmsExists(id))
+                if (!SmsExists(sms.Id))
                 {
                     return NotFound();
                 }
@@ -81,16 +82,13 @@ namespace SendSMSHost.Controllers
 
         // POST: api/Sms
         [ResponseType(typeof(SmsDTO))]
-        public async Task<IHttpActionResult> PostSms(SmsDTOWithClient smsDTOWithClient)
+        public async Task<IHttpActionResult> PostSms(SmsDTO smsDTO)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            smsDTOWithClient.Operation = "POST";
-            SmsDTO smsDTO = smsDTOWithClient.SmsDTO;
-            string client = smsDTOWithClient.Client;
 
             // Indien ContactId == null dan opzoeken of nieuw contact voorzien
             if (String.IsNullOrWhiteSpace(smsDTO.ContactId))
@@ -147,26 +145,23 @@ namespace SendSMSHost.Controllers
                 }
             }
 
-            smsDTOWithClient.SmsDTO = Mapper.Map<SmsDTO>
+            smsDTO = Mapper.Map<SmsDTO>
                 (
                     await db.Sms.ProjectTo<SmsDTO>()
                         .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString())
                 );
 
-            return CreatedAtRoute("DefaultApi", new { id = smsDTO.Id }, smsDTOWithClient.SmsDTO);
+            return CreatedAtRoute("DefaultApi", new { id = smsDTO.Id }, smsDTO);
         }
 
         // DELETE: api/Sms/5
         [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> DeleteSms(Guid id, SmsDTOWithClient smsDTOWithClient)
+        public async Task<IHttpActionResult> DeleteSms(Guid id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
-            // SmsDTO smsDTO = smsDTOWithClient.SmsDTO; //niet nodig, is null
-            string client = smsDTOWithClient.Client;
 
             Sms sms = await db.Sms.FindAsync(id);
             if (sms == null)

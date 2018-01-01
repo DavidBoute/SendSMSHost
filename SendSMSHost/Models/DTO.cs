@@ -39,4 +39,11 @@ namespace SendSMSHost.Models
         public string Client { get; set; }
         public string Operation { get; set; }
     }
+
+    public class SmsDTOListWithClient
+    {
+        public List<SmsDTO> SmsDTOList { get; set; } = new List<SmsDTO>();
+        public string Client { get; set; }
+        public string Operation { get; set; }
+    }
 }

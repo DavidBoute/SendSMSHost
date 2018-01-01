@@ -34,7 +34,7 @@ Vue.component('modal-new-sms-contact', {
             var ajaxHeaders = new Headers();
             ajaxHeaders.append("Content-Type", "application/json");
             var ajaxConfig = {
-                body: JSON.stringify({ SmsDTO: self.newSms, Client: clientName }),
+                body: JSON.stringify(self.newSms),
                 headers: ajaxHeaders
             }
 
@@ -106,7 +106,7 @@ Vue.component('modal-new-sms-number', {
             var ajaxHeaders = new Headers();
             ajaxHeaders.append("Content-Type", "application/json");
             var ajaxConfig = {
-                body: JSON.stringify({ SmsDTO: self.newSms, Client: clientName }),
+                body: JSON.stringify(self.newSms),
                 headers: ajaxHeaders
             }
 
@@ -260,7 +260,7 @@ var app = new Vue({
             var ajaxHeaders = new Headers();
             ajaxHeaders.append("Content-Type", "application/json");
             var ajaxConfig = {
-                body: JSON.stringify({ SmsDTO: self.currentSms, Client: clientName }),
+                body: JSON.stringify(self.currentSms),
                 headers: ajaxHeaders
             }
             ajaxConfig.method = 'PUT';
@@ -300,13 +300,12 @@ var app = new Vue({
                 })
                 .catch(err => console.error('Fout: ' + err));;
         },
-        deleteBook: function ()
+        deleteSms: function ()
         {
             self = this;
             var ajaxHeaders = new Headers();
             ajaxHeaders.append("Content-Type", "application/json");
             var ajaxConfig = {
-                body: JSON.stringify({ SmsDTO: null, Client: clientName }),
                 headers: ajaxHeaders
             }
             ajaxConfig.method = 'DELETE';
