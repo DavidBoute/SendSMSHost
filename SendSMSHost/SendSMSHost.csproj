@@ -233,9 +233,14 @@
     <Compile Include="Migrations\201712291307373_AnonymousContacts.Designer.cs">
       <DependentUpon>201712291307373_AnonymousContacts.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201801092111274_import.cs" />
+    <Compile Include="Migrations\201801092111274_import.Designer.cs">
+      <DependentUpon>201801092111274_import.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Contact.cs" />
     <Compile Include="Models\DTO.cs" />
+    <Compile Include="Models\ImportSms.cs" />
     <Compile Include="Models\SendSMSHostContext.cs" />
     <Compile Include="Models\Sms.cs" />
     <Compile Include="Models\Status.cs" />
@@ -312,10 +317,9 @@
     <Content Include="Content\Site.css" />
     <Content Include="Views\Web.config" />
     <Content Include="Views\_ViewStart.cshtml" />
-    <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
-    <Content Include="Views\Home\IndexVue.cshtml" />
+    <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Sync\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
@@ -332,6 +336,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201712291307373_AnonymousContacts.resx">
       <DependentUpon>201712291307373_AnonymousContacts.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201801092111274_import.resx">
+      <DependentUpon>201801092111274_import.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

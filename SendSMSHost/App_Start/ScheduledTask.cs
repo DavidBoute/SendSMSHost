@@ -21,17 +21,22 @@ namespace SendSMSHost.App_Start
         public void Start()
         {
             AddTask("EnqueueSmsToSend", 10);
+            AddTask("ImportSms", 11);
         }
 
-        private void AddTask(string name, int seconds)
+        public void CacheItemRemoved(string taskName, object taskTime, CacheItemRemovedReason r)
         {
-            OnCacheRemove = new CacheItemRemovedCallback(CacheItemRemoved);
-            HttpRuntime.Cache.Insert(name, seconds, null,
-                DateTime.Now.AddSeconds(seconds), Cache.NoSlidingExpiration,
-                CacheItemPriority.NotRemovable, OnCacheRemove);
+            if (taskName == "EnqueueSmsToSend")
+            {
+                EnqueueSmsToSend(taskName, taskTime);
+            }
+            else if (taskName == "ImportSms")
+            {
+                ImportSms(taskName, taskTime);
+            }
         }
 
-        public async void CacheItemRemoved(string k, object v, CacheItemRemovedReason r)
+        private async void EnqueueSmsToSend(string taskName, object taskTime)
         {
             // nieuwe context opvragen
             var db = new SendSMSHostContext();
@@ -66,12 +71,94 @@ namespace SendSMSHost.App_Start
                     {
                         Console.WriteLine(ex.Message);
                     }
-
                 }
             }
 
             // re-add our task so it recurs
-            AddTask(k, Convert.ToInt32(v));
+            AddTask(taskName, Convert.ToInt32(taskTime));
         }
+
+        private async void ImportSms(string taskName, object taskTime)
+        {
+            // nieuwe context opvragen
+            var db = new SendSMSHostContext();
+
+            // kijken als er reccords in de tabel ImportSms zijn
+            // en toevoegen aan genormaliseerde tabellen.
+
+            if (db.ImportSms.Count() > 0)
+            {
+                var signalRContext = GlobalHost.ConnectionManager.GetHubContext<ServerSentEventsHub>();
+
+                Status statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
+
+                var smsToImportList = db.ImportSms.ToList();
+                foreach (var smsToImport in smsToImportList)
+                {
+
+                        // kijken of nummer al in gebruik is
+                        Contact contact = db.Contacts.SingleOrDefault(x => x.Number == smsToImport.ContactNumber);
+                        if (contact == null) // nieuw contact maken
+                        {
+                            contact = new Contact
+                            {
+                                Id = Guid.NewGuid(),
+                                FirstName = (smsToImport.ContactFirstName != String.Empty ? 
+                                                smsToImport.ContactFirstName : smsToImport.ContactNumber) ,
+                                LastName = smsToImport.ContactLastName,
+                                Number = smsToImport.ContactNumber,
+                                IsAnonymous = (smsToImport.ContactFirstName != String.Empty)
+                            };
+
+                            db.Contacts.Add(contact);
+                            try
+                            {
+                                await db.SaveChangesAsync();
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.Message);
+                                throw;
+                            }
+                        }
+
+                    Sms sms = new Sms
+                    {
+                        Id = Guid.NewGuid(),
+                        ContactId = contact.Id,
+                        Message = smsToImport.Message,
+                        StatusId = statusCreated.Id,
+                        TimeStamp = DateTime.Now,
+                    };
+
+                    db.Sms.Add(sms);
+                    db.ImportSms.Remove(smsToImport);
+                }
+
+                try
+                {
+                    await db.SaveChangesAsync();
+                    signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithClient { Client = "Server", Operation = "POST", SmsDTO = null });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    throw;
+                }
+            }
+
+            // re-add our task so it recurs
+            AddTask(taskName, Convert.ToInt32(taskTime));
+        }
+
+        private void AddTask(string name, int seconds)
+        {
+            OnCacheRemove = new CacheItemRemovedCallback(CacheItemRemoved);
+            HttpRuntime.Cache.Insert(name, seconds, null,
+                DateTime.Now.AddSeconds(seconds), Cache.NoSlidingExpiration,
+                CacheItemPriority.NotRemovable, OnCacheRemove);
+        }
+
+
     }
 }

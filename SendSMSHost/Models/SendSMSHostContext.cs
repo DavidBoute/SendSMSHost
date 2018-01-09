@@ -24,5 +24,7 @@ namespace SendSMSHost.Models
         public System.Data.Entity.DbSet<SendSMSHost.Models.Sms> Sms { get; set; }
 
         public System.Data.Entity.DbSet<SendSMSHost.Models.Status> Status { get; set; }
+
+        public System.Data.Entity.DbSet<SendSMSHost.Models.ImportSms> ImportSms { get; set; }
     }
 }

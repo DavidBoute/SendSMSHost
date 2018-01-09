@@ -24,14 +24,14 @@ namespace SendSMSHost.Controllers
             return smsList;
         }
 
-        // GET: api/SmsPhone
-        public IQueryable<SmsDTO> GetSmsPhone()
-        {
-            var statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
-            var smsList = db.Sms.Where(x => x.StatusId != statusCreated.Id).OrderBy(x => x.TimeStamp).ProjectTo<SmsDTO>();
+        //// GET: api/SmsPhone
+        //public IQueryable<SmsDTO> GetSmsPhone()
+        //{
+        //    var statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
+        //    var smsList = db.Sms.Where(x => x.StatusId != statusCreated.Id).OrderBy(x => x.TimeStamp).ProjectTo<SmsDTO>();
 
-            return smsList;
-        }
+        //    return smsList;
+        //}
 
         // GET: api/Sms/5
         [ResponseType(typeof(SmsDTO))]

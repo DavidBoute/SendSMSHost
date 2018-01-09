@@ -10,10 +10,5 @@ namespace SendSMSHost.Controllers
 
             return View();
         }
-
-        public ActionResult IndexVue()
-        {
-            return View();
-        }
     }
 }
