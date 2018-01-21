@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.AspNet.SignalR;
 using SendSMSHost.Models;
+using SendSMSHost.SignalR;
 using System;
 using System.Data;
 using System.Data.Entity;
@@ -15,6 +17,7 @@ namespace SendSMSHost.Controllers
     public class SmsController : ApiController
     {
         private SendSMSHostContext db = new SendSMSHostContext();
+        private IHubContext _signalRContext;
 
         // GET: api/Sms
         public IQueryable<SmsDTO> GetSms()
@@ -23,15 +26,6 @@ namespace SendSMSHost.Controllers
 
             return smsList;
         }
-
-        //// GET: api/SmsPhone
-        //public IQueryable<SmsDTO> GetSmsPhone()
-        //{
-        //    var statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
-        //    var smsList = db.Sms.Where(x => x.StatusId != statusCreated.Id).OrderBy(x => x.TimeStamp).ProjectTo<SmsDTO>();
-
-        //    return smsList;
-        //}
 
         // GET: api/Sms/5
         [ResponseType(typeof(SmsDTO))]
@@ -64,6 +58,7 @@ namespace SendSMSHost.Controllers
             try
             {
                 await db.SaveChangesAsync();
+                _signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -88,7 +83,6 @@ namespace SendSMSHost.Controllers
             {
                 return BadRequest(ModelState);
             }
-
 
             // Indien ContactId == null dan opzoeken of nieuw contact voorzien
             if (String.IsNullOrWhiteSpace(smsDTO.ContactId))
@@ -132,6 +126,11 @@ namespace SendSMSHost.Controllers
             try
             {
                 await db.SaveChangesAsync();
+
+                smsDTO = await db.Sms.ProjectTo<SmsDTO>()
+                    .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString());
+
+                _signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "POST" });
             }
             catch (DbUpdateException)
             {
@@ -145,13 +144,7 @@ namespace SendSMSHost.Controllers
                 }
             }
 
-            smsDTO = Mapper.Map<SmsDTO>
-                (
-                    await db.Sms.ProjectTo<SmsDTO>()
-                        .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString())
-                );
-
-            return CreatedAtRoute("DefaultApi", new { id = smsDTO.Id }, smsDTO);
+            return Ok();
         }
 
         // DELETE: api/Sms/5
@@ -170,9 +163,17 @@ namespace SendSMSHost.Controllers
             }
 
             db.Sms.Remove(sms);
+
+            SmsDTO smsDTO = Mapper.Map<SmsDTO>
+            (
+                await db.Sms.ProjectTo<SmsDTO>()
+                    .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString())
+            );
+
             try
             {
                 await db.SaveChangesAsync();
+                _signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "DELETE" });
             }
             catch (Exception ex)
             {
@@ -195,6 +196,11 @@ namespace SendSMSHost.Controllers
         private bool SmsExists(Guid id)
         {
             return db.Sms.Count(e => e.Id == id) > 0;
+        }
+
+        public SmsController()
+        {
+            _signalRContext = GlobalHost.ConnectionManager.GetHubContext<ServerSentEventsHub>();
         }
     }
 }

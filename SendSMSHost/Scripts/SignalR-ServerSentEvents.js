@@ -6,7 +6,7 @@ $(function ()
 
 
     // Create a function that the hub can call back to display messages.
-    SSEHub.client.sendMessage = function (message)
+    SSEHub.client.displayMessage = function (message)
     {
         alert(htmlEncode(message));
     };

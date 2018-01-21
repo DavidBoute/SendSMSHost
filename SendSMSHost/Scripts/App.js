@@ -42,21 +42,8 @@ Vue.component('modal-new-sms-contact', {
             var myRequest = new Request(self.apiUrl + 'Sms/', ajaxConfig)
 
             fetch(myRequest)
-                .then(res => res.json())
-                .then(function (res)
+                .then(function ()
                 {
-                    console.log(res);
-
-                    self.newSms.Id = res.Id;
-                    self.newSms.ContactId = res.ContactId;
-                    self.newSms.ContactFirstName = res.ContactFirstName;
-                    self.newSms.ContactLastName = res.ContactLastName;
-                    self.newSms.ContactNumber = res.ContactNumber;
-                    self.newSms.Message = res.Message;
-                    self.newSms.StatusName = res.StatusName;
-                    self.newSms.TimeStamp = res.TimeStamp
-                    self.sms.push(self.newSms);
-
                     // newSms resetten
                     self.newSms = new Object();
                     self.newSms.Id = null;
@@ -66,9 +53,6 @@ Vue.component('modal-new-sms-contact', {
                     self.newSms.ContactNumber = null;
                     self.newSms.Message = null;
                     self.newSms.TimeStamp = null;
-
-                    // andere clients inlichten
-                    SSEHub.server.notifyChange({Client: clientName, Operation: 'POST', SmsDTO: res});
                 })
                 .catch(err => console.error('Fout: ' + err));
 
@@ -114,21 +98,8 @@ Vue.component('modal-new-sms-number', {
             var myRequest = new Request(self.apiUrl + 'Sms/', ajaxConfig)
 
             fetch(myRequest)
-                .then(res => res.json())
-                .then(function (res)
+                .then(function ()
                 {
-                    console.log(res);
-
-                    self.newSms.Id = res.Id;
-                    self.newSms.ContactId = res.ContactId;
-                    self.newSms.ContactFirstName = res.ContactFirstName;
-                    self.newSms.ContactLastName = res.ContactLastName;
-                    self.newSms.ContactNumber = res.ContactNumber;
-                    self.newSms.Message = res.Message;
-                    self.newSms.StatusName = res.StatusName;
-                    self.newSms.TimeStamp = res.TimeStamp
-                    self.sms.push(self.newSms);
-
                     // newSms resetten
                     self.newSms = new Object();
                     self.newSms.Id = null;
@@ -138,9 +109,6 @@ Vue.component('modal-new-sms-number', {
                     self.newSms.ContactNumber = null;
                     self.newSms.Message = null;
                     self.newSms.TimeStamp = null;
-
-                    // andere clients inlichten
-                    SSEHub.server.notifyChange({ Client: clientName, Operation: 'POST', SmsDTO: res });
                 })
                 .catch(err => console.error('Fout: ' + err));;
 
@@ -267,22 +235,8 @@ var app = new Vue({
             var myRequest = new Request(`${apiURL}Sms/${self.currentSms.Id}`, ajaxConfig)
 
             fetch(myRequest)
-                .then(res => res.json())
-                .then(function (res)
+                .then(function ()
                 {
-                    console.log(res);
-
-                    // Lijst updaten
-                    smsInList = self.sms.filter(s => (s.Id === res.Id))[0];
-                    smsInList.Id = res.Id;
-                    smsInList.ContactId = res.ContactId;
-                    smsInList.ContactFirstName = res.ContactFirstName;
-                    smsInList.ContactLastName = res.ContactLastName;
-                    smsInList.ContactNumber = res.ContactNumber;
-                    smsInList.Message = res.Message;
-                    smsInList.TimeStamp = res.TimeStamp;
-                    smsInList.StatusName = res.StatusName;
-
                     // Editvenster updaten
                     self.currentSms.Id = res.Id;
                     self.currentSms.ContactId = res.ContactId;
@@ -292,9 +246,6 @@ var app = new Vue({
                     self.currentSms.Message = res.Message;
                     self.currentSms.TimeStamp = res.TimeStamp;
                     self.currentSms.StatusName = res.StatusName;
-
-                    // andere clients inlichten
-                    SSEHub.server.notifyChange({ Client: clientName, Operation: 'PUT', SmsDTO: res });
 
                     self.editMode = false;
                 })
@@ -312,22 +263,6 @@ var app = new Vue({
             var myRequest = new Request(`${apiURL}Sms/${self.currentSms.Id}`, ajaxConfig)
 
             fetch(myRequest)
-                .then(function ()
-                {
-                    // andere clients inlichten
-                    // hier voor de operatie opdat self.currentSms op null gezet wordt
-                    SSEHub.server.notifyChange({ Client: clientName, Operation: 'DELETE', SmsDTO: self.currentSms });
-
-                    self.sms.forEach(function (s, i)
-                    {
-                        if (s.Id == self.currentSms.Id)
-                        {
-                            self.sms.splice(i, 1);
-                            self.currentSms = null;
-                            return;
-                        }
-                    });
-                })
                 .catch(err => console.error('Fout: ' + err));
         },
         getShortenedMessage: function (text)

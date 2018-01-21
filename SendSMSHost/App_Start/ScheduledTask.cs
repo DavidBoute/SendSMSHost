@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNet.SignalR;
+using Microsoft.AspNet.SignalR.Hubs;
 using SendSMSHost.Models;
 using SendSMSHost.SignalR;
 using System;
@@ -16,7 +17,8 @@ namespace SendSMSHost.App_Start
     // https://stackoverflow.blog/2008/07/18/easy-background-tasks-in-aspnet/
     public class ScheduledTask
     {
-        private CacheItemRemovedCallback OnCacheRemove = null;
+        private CacheItemRemovedCallback _onCacheRemove = null;
+        private IHubContext _signalRContext;
 
         public void Start()
         {
@@ -49,8 +51,6 @@ namespace SendSMSHost.App_Start
             if (createdSmsList.Count() > 0
                 && queuedSmsList.Count() < 5)
             {
-                var signalRContext = GlobalHost.ConnectionManager.GetHubContext<ServerSentEventsHub>();
-
                 var changeToQueuedSmsList = createdSmsList.Take(
                     Math.Min(5 - queuedSmsList.Count(), createdSmsList.Count()));
                 Status statusQueued = db.Status.FirstOrDefault(x => x.Name == "Queued");
@@ -65,7 +65,7 @@ namespace SendSMSHost.App_Start
                     {
                         await db.SaveChangesAsync();
 
-                        signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithClient { Client = "Server", Operation = "PUT", SmsDTO = smsDTO });
+                        _signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
                     }
                     catch (Exception ex)
                     {
@@ -88,39 +88,37 @@ namespace SendSMSHost.App_Start
 
             if (db.ImportSms.Count() > 0)
             {
-                var signalRContext = GlobalHost.ConnectionManager.GetHubContext<ServerSentEventsHub>();
-
                 Status statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
 
                 var smsToImportList = db.ImportSms.ToList();
                 foreach (var smsToImport in smsToImportList)
                 {
 
-                        // kijken of nummer al in gebruik is
-                        Contact contact = db.Contacts.SingleOrDefault(x => x.Number == smsToImport.ContactNumber);
-                        if (contact == null) // nieuw contact maken
+                    // kijken of nummer al in gebruik is
+                    Contact contact = db.Contacts.SingleOrDefault(x => x.Number == smsToImport.ContactNumber);
+                    if (contact == null) // nieuw contact maken
+                    {
+                        contact = new Contact
                         {
-                            contact = new Contact
-                            {
-                                Id = Guid.NewGuid(),
-                                FirstName = (smsToImport.ContactFirstName != String.Empty ? 
-                                                smsToImport.ContactFirstName : smsToImport.ContactNumber) ,
-                                LastName = smsToImport.ContactLastName,
-                                Number = smsToImport.ContactNumber,
-                                IsAnonymous = (smsToImport.ContactFirstName != String.Empty)
-                            };
+                            Id = Guid.NewGuid(),
+                            FirstName = (smsToImport.ContactFirstName != String.Empty ?
+                                            smsToImport.ContactFirstName : smsToImport.ContactNumber),
+                            LastName = smsToImport.ContactLastName,
+                            Number = smsToImport.ContactNumber,
+                            IsAnonymous = (smsToImport.ContactFirstName != String.Empty)
+                        };
 
-                            db.Contacts.Add(contact);
-                            try
-                            {
-                                await db.SaveChangesAsync();
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex.Message);
-                                throw;
-                            }
+                        db.Contacts.Add(contact);
+                        try
+                        {
+                            await db.SaveChangesAsync();
                         }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                            throw;
+                        }
+                    }
 
                     Sms sms = new Sms
                     {
@@ -138,7 +136,7 @@ namespace SendSMSHost.App_Start
                 try
                 {
                     await db.SaveChangesAsync();
-                    signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithClient { Client = "Server", Operation = "POST", SmsDTO = null });
+                    _signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = null, Operation = "POST" });
                 }
                 catch (Exception ex)
                 {
@@ -153,12 +151,16 @@ namespace SendSMSHost.App_Start
 
         private void AddTask(string name, int seconds)
         {
-            OnCacheRemove = new CacheItemRemovedCallback(CacheItemRemoved);
+            _onCacheRemove = new CacheItemRemovedCallback(CacheItemRemoved);
             HttpRuntime.Cache.Insert(name, seconds, null,
                 DateTime.Now.AddSeconds(seconds), Cache.NoSlidingExpiration,
-                CacheItemPriority.NotRemovable, OnCacheRemove);
+                CacheItemPriority.NotRemovable, _onCacheRemove);
         }
 
+        public ScheduledTask()
+        {
+            _signalRContext = GlobalHost.ConnectionManager.GetHubContext<ServerSentEventsHub>();
+        }
 
     }
 }

@@ -33,17 +33,9 @@ namespace SendSMSHost.Models
         public string Name { get; set; }
     }
 
-    public class SmsDTOWithClient
+    public class SmsDTOWithOperation
     {
         public SmsDTO SmsDTO { get; set; }
-        public string Client { get; set; }
-        public string Operation { get; set; }
-    }
-
-    public class SmsDTOListWithClient
-    {
-        public List<SmsDTO> SmsDTOList { get; set; } = new List<SmsDTO>();
-        public string Client { get; set; }
         public string Operation { get; set; }
     }
 }
