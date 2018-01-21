@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SendSMSHost.SignalR
 {
@@ -78,7 +79,7 @@ namespace SendSMSHost.SignalR
         /// Past een Sms aan in de database.
         /// </summary>
         /// <param name="smsDTO">de aan te passen sms</param>
-        public async void RequestUpdateSms(SmsDTO smsDTO)
+        public async Task RequestUpdateSms(SmsDTO smsDTO)
         {
             Sms newSms = Mapper.Map<Sms>(smsDTO);
             db.Set<Sms>().Attach(newSms);
@@ -100,9 +101,9 @@ namespace SendSMSHost.SignalR
         /// Verwijdert een Sms aan in de database.
         /// </summary>
         /// <param name="smsDTO">de te verwijderen sms</param>
-        public async void RequestDeleteSms(SmsDTO smsDTO)
+        public async Task RequestDeleteSms(SmsDTO smsDTO)
         {
-            Sms sms = await db.Sms.FindAsync(smsDTO.Id);
+            Sms sms = await db.Sms.FindAsync(Guid.Parse(smsDTO.Id));
             if (sms != null)
             {
                 db.Sms.Remove(sms);
