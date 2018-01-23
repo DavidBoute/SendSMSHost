@@ -11,7 +11,7 @@ namespace SendSMSHost.Controllers
         // GET: Sync
         public ActionResult Index()
         {
-            // IP van server opzoeken
+            // lokaal IP van server opzoeken
             IPHostEntry host;
             string localIP = "?";
             host = Dns.GetHostEntry(Dns.GetHostName());
@@ -25,8 +25,8 @@ namespace SendSMSHost.Controllers
                 }
             }
 
-            string port = Request.ServerVariables["SERVER_PORT"];
-            port = "45455"; // Manuele waarde -> zie Conveyor
+            // string port = Request.ServerVariables["SERVER_PORT"];  TODO: port via proxy terugvinden
+            string port = "45455"; // Manuele waarde -> zie Conveyor
 
             SyncIndexViewModel VM = new SyncIndexViewModel
             {

@@ -88,7 +88,7 @@ namespace SendSMSHost.SignalR
             try
             {
                 await db.SaveChangesAsync();
-                Clients.Caller.updateSms(newSms);
+                Clients.Caller.updateSms(smsDTO);
                 Clients.Others.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
             }
             catch (Exception ex)
@@ -110,7 +110,7 @@ namespace SendSMSHost.SignalR
                 try
                 {
                     await db.SaveChangesAsync();
-                    Clients.Caller.deleteSms(sms);
+                    Clients.Caller.deleteSms(smsDTO);
                     Clients.Others.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "DELETE" });
                 }
                 catch (Exception ex)

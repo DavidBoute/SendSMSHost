@@ -13,7 +13,7 @@ using System.Web.Caching;
 
 namespace SendSMSHost.App_Start
 {
-    // Periodic tasks in ASP.Net 
+    // Voert taken iedere x seconden uit
     // https://stackoverflow.blog/2008/07/18/easy-background-tasks-in-aspnet/
     public class ScheduledTask
     {
@@ -23,7 +23,7 @@ namespace SendSMSHost.App_Start
         public void Start()
         {
             AddTask("EnqueueSmsToSend", 10);
-            AddTask("ImportSms", 11);
+            AddTask("ImportSms", 10);
         }
 
         public void CacheItemRemoved(string taskName, object taskTime, CacheItemRemovedReason r)
@@ -38,6 +38,12 @@ namespace SendSMSHost.App_Start
             }
         }
 
+        /// <summary>
+        /// Zorgt er voor dat er  steeds 5 sms'en zijn om te verwerken
+        /// Status Queued of Pending
+        /// </summary>
+        /// <param name="taskName"></param>
+        /// <param name="taskTime"></param>
         private async void EnqueueSmsToSend(string taskName, object taskTime)
         {
             // nieuwe context opvragen
@@ -78,6 +84,12 @@ namespace SendSMSHost.App_Start
             AddTask(taskName, Convert.ToInt32(taskTime));
         }
 
+        /// <summary>
+        /// Leest periodiek de tabel ImportSms uit en voegt sms'en en nummers toe aan database
+        /// Verwittigt via Signal R de andere applicaties
+        /// </summary>
+        /// <param name="taskName"></param>
+        /// <param name="taskTime"></param>
         private async void ImportSms(string taskName, object taskTime)
         {
             // nieuwe context opvragen

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Entity;
-using System.Linq;
-using System.Web;
+﻿using System.Data.Entity;
 
 namespace SendSMSHost.Models
 {
@@ -19,12 +15,9 @@ namespace SendSMSHost.Models
         {
         }
 
-        public System.Data.Entity.DbSet<SendSMSHost.Models.Contact> Contacts { get; set; }
-
-        public System.Data.Entity.DbSet<SendSMSHost.Models.Sms> Sms { get; set; }
-
-        public System.Data.Entity.DbSet<SendSMSHost.Models.Status> Status { get; set; }
-
-        public System.Data.Entity.DbSet<SendSMSHost.Models.ImportSms> ImportSms { get; set; }
+        public DbSet<Contact> Contacts { get; set; }
+        public DbSet<Sms> Sms { get; set; }
+        public DbSet<Status> Status { get; set; }
+        public DbSet<ImportSms> ImportSms { get; set; }
     }
 }
