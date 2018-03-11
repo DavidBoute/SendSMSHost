@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27004.2002
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SendSMSHost", "SendSMSHost\SendSMSHost.csproj", "{B933F14C-FC95-42DE-8976-4DCFAC8BCDA4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{8A4F0CA7-0936-4AD1-AD9A-54EAB40B3FDA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{B933F14C-FC95-42DE-8976-4DCFAC8BCDA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B933F14C-FC95-42DE-8976-4DCFAC8BCDA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B933F14C-FC95-42DE-8976-4DCFAC8BCDA4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A4F0CA7-0936-4AD1-AD9A-54EAB40B3FDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A4F0CA7-0936-4AD1-AD9A-54EAB40B3FDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A4F0CA7-0936-4AD1-AD9A-54EAB40B3FDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A4F0CA7-0936-4AD1-AD9A-54EAB40B3FDA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

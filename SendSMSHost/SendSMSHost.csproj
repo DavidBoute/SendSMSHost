@@ -221,6 +221,7 @@
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\SmsController.cs" />
     <Compile Include="Controllers\StatusController.cs" />
+    <Compile Include="Controllers\SummaryController.cs" />
     <Compile Include="Controllers\SyncController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -244,9 +245,11 @@
     <Compile Include="Models\SendSMSHostContext.cs" />
     <Compile Include="Models\Sms.cs" />
     <Compile Include="Models\Status.cs" />
+    <Compile Include="Models\SummaryFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerSentEventsStartup.cs" />
     <Compile Include="SignalR\ServerSentEventsHub.cs" />
+    <Compile Include="ViewModels\SummaryIndexViewModel.cs" />
     <Compile Include="ViewModels\SyncIndexViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
