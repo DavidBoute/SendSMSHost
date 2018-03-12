@@ -218,6 +218,7 @@
     <Compile Include="Areas\HelpPage\SampleGeneration\TextSample.cs" />
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="Controllers\ContactsController.cs" />
+    <Compile Include="Controllers\DashboardController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\SmsController.cs" />
     <Compile Include="Controllers\StatusController.cs" />
@@ -237,6 +238,10 @@
     <Compile Include="Migrations\201801092111274_import.cs" />
     <Compile Include="Migrations\201801092111274_import.Designer.cs">
       <DependentUpon>201801092111274_import.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201803121846022_Summary.cs" />
+    <Compile Include="Migrations\201803121846022_Summary.Designer.cs">
+      <DependentUpon>201803121846022_Summary.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Contact.cs" />
@@ -293,7 +298,8 @@
     <Content Include="Content\bootstrap-theme.min.css.map" />
     <Content Include="Content\bootstrap-theme.css.map" />
     <None Include="Scripts\jquery-3.2.1.intellisense.js" />
-    <Content Include="Scripts\App.js" />
+    <Content Include="ViewModels\Dashboard\App.js" />
+    <Content Include="ViewModels\Home\App.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\jquery-3.2.1.js" />
@@ -324,6 +330,7 @@
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Sync\Index.cshtml" />
+    <Content Include="Views\Dashboard\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -342,6 +349,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201801092111274_import.resx">
       <DependentUpon>201801092111274_import.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201803121846022_Summary.resx">
+      <DependentUpon>201803121846022_Summary.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

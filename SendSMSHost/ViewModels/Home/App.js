@@ -135,10 +135,6 @@ var app = new Vue({
     {
         var self = this;
         self.loadData();
-        //self.interval = setInterval(function ()
-        //{
-        //    self.loadData();
-        //}.bind(self), 5000);
     },
     methods: {
         loadData: function ()
