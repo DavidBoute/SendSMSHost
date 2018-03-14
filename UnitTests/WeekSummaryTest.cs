@@ -5,6 +5,7 @@ using Effort;
 using System.Linq;
 using SendSMSHost.Models;
 using System.Collections.Generic;
+using SendSMSHost.Models.Factory;
 
 namespace UnitTests
 {

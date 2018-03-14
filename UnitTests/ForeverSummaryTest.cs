@@ -4,6 +4,7 @@ using Effort;
 using SendSMSHost.Models;
 using System.Threading.Tasks;
 using System.Linq;
+using SendSMSHost.Models.Factory;
 
 namespace UnitTests
 {

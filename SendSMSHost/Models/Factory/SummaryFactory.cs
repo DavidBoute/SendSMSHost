@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace SendSMSHost.Models
+namespace SendSMSHost.Models.Factory
 {
     public interface ISummaryFactory
     {
@@ -53,8 +53,10 @@ namespace SendSMSHost.Models
                 IntervalStart = db.Sms.Min(x => x.TimeStamp).Date
             };
 
-            List<SummaryInterval> intervalList = new List<SummaryInterval>();
-            intervalList.Add(interval);
+            List<SummaryInterval> intervalList = new List<SummaryInterval>
+            {
+                interval
+            };
 
             summary.SummaryIntervalList = intervalList;
 
