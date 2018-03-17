@@ -31,10 +31,16 @@ namespace SendSMSHost.Models.Factory
         {
             var data = db.Status
                         .Include("Sms")
+                        .Select(x => new
+                        {
+                            Label = x.Name,
+                            Data = x.Sms.Count()
+                        })
+                        .AsEnumerable()
                         .Select(d => new DataSet
                         {
-                            Label = d.Name,
-                            Data = new int[] { d.Sms.Count() }
+                            Label = d.Label,
+                            Data = new int[] { d.Data }
                         })
                         .ToArray();
 
@@ -57,24 +63,6 @@ namespace SendSMSHost.Models.Factory
             {
                 dateList.Add(DateTime.Today.AddDays(-i));
             }
-
-            //var data = db.Status
-            //            .Include("Sms")
-            //            .Select(d => new
-            //            {
-            //                Label = d.Name,
-            //                Data = dateList.GroupJoin(d.Sms,
-            //                            date => date,
-            //                            sms => DbFunctions.TruncateTime(sms.TimeStamp),
-            //                            (date, sms) => sms.Count())
-            //            })
-            //            .AsEnumerable()
-            //            .Select(d=> new DataSet
-            //            {
-            //                Label = d.Label,
-            //                Data = d.Data.ToArray()
-            //            })
-            //            .ToArray();
 
             var data = db.Status
             .Include("Sms")
@@ -114,26 +102,6 @@ namespace SendSMSHost.Models.Factory
             {
                 hourList.Add(DateTime.Today.AddHours(i));
             }
-
-            //var data = db.Status
-            //            .Include("Sms")
-            //            .Select(d => new
-            //            {
-            //                Label = d.Name,
-            //                Data = hourList.GroupJoin(d.Sms,
-            //                            date => date,
-            //                            sms => DbFunctions.AddHours(DbFunctions.TruncateTime(sms.TimeStamp),
-            //                                                        DbFunctions.DiffHours(DbFunctions.TruncateTime(sms.TimeStamp),
-            //                                                                               sms.TimeStamp)),
-            //                            (date, sms) => sms.Count())
-            //            })
-            //            .AsEnumerable()
-            //            .Select(d => new DataSet
-            //            {
-            //                Label = d.Label,
-            //                Data = d.Data.ToArray()
-            //            })
-            //            .ToArray();
 
             var data = db.Status
                         .Include("Sms")

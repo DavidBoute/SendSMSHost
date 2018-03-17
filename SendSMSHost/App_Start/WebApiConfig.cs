@@ -17,10 +17,18 @@ namespace SendSMSHost
             config.MapHttpAttributeRoutes();
 
             config.Routes.MapHttpRoute(
+                name: "ChartDataApi",
+                routeTemplate: "api/chartdata/{action}",
+                defaults: new {controller = "Chartdata"}
+            );
+
+            config.Routes.MapHttpRoute(
                 name: "DefaultApi",
                 routeTemplate: "api/{controller}/{id}",
                 defaults: new { id = RouteParameter.Optional }
             );
+
+
 
 
         }
