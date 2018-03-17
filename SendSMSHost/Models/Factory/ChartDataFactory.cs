@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
@@ -14,14 +15,22 @@ namespace SendSMSHost.Models.Factory
 
     public class ChartData
     {
+        [JsonProperty("labels")]
         public string[] Labels { get; set; }
+
+        [JsonProperty("datasets")]
         public DataSet[] Datasets { get; set; }
     }
 
     public class DataSet
     {
+        [JsonProperty("label")]
         public string Label { get; set; }
+
+        [JsonProperty("data")]
         public int[] Data { get; set; }
+
+        [JsonProperty("backgroundcolor")]
         public string BackgroundColor { get; set; }
     }
 
@@ -70,23 +79,25 @@ namespace SendSMSHost.Models.Factory
             {
                 Label = d.Name,
                 Data = dateList
+                        .OrderBy(dt => dt)
                         .Select(date => d.Sms
-                                        .Where(x => date <= x.TimeStamp
-                                                && x.TimeStamp < DbFunctions.AddDays(date, 1))
-                                        .Count())
+                                        .Count(x => date <= x.TimeStamp
+                                                && x.TimeStamp < DbFunctions.AddDays(date, 1)))
             })
             .AsEnumerable()
             .Select(d => new DataSet
             {
                 Label = d.Label,
-                Data = d.Data.ToArray()
+                Data = d.Data.ToArray(),
+                //BackgroundColor = "#087979"
             })
             .ToArray();
 
             ChartData chartData = new ChartData
             {
                 Labels = dateList.Select(d => d.ToString("ddd dd/MM")).ToArray(),
-                Datasets = data
+                Datasets = data,
+
             };
 
             return chartData;
@@ -109,9 +120,10 @@ namespace SendSMSHost.Models.Factory
                         {
                             Label = d.Name,
                             Data = hourList
+                                    .OrderBy(dt => dt)
                                     .Select(h => d.Sms
-                                                .Where(x => h <= x.TimeStamp 
-                                                        && x.TimeStamp < DbFunctions.AddHours(h,1))
+                                                .Where(x => h <= x.TimeStamp
+                                                        && x.TimeStamp < DbFunctions.AddHours(h, 1))
                                                 .Count())
                         })
                         .AsEnumerable()
@@ -134,6 +146,6 @@ namespace SendSMSHost.Models.Factory
 
     public class HourChartDataFactory : IChartDataFactory
     {
-       public ChartData CreateChartData(ISendSMSHostContext db) { return new ChartData(); }
+        public ChartData CreateChartData(ISendSMSHostContext db) { return new ChartData(); }
     }
 }

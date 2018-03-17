@@ -227,21 +227,9 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201712212030157_Initial.cs" />
-    <Compile Include="Migrations\201712212030157_Initial.Designer.cs">
-      <DependentUpon>201712212030157_Initial.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201712291307373_AnonymousContacts.cs" />
-    <Compile Include="Migrations\201712291307373_AnonymousContacts.Designer.cs">
-      <DependentUpon>201712291307373_AnonymousContacts.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201801092111274_import.cs" />
-    <Compile Include="Migrations\201801092111274_import.Designer.cs">
-      <DependentUpon>201801092111274_import.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201803121846022_Summary.cs" />
-    <Compile Include="Migrations\201803121846022_Summary.Designer.cs">
-      <DependentUpon>201803121846022_Summary.cs</DependentUpon>
+    <Compile Include="Migrations\201803172058180_initial.cs" />
+    <Compile Include="Migrations\201803172058180_initial.Designer.cs">
+      <DependentUpon>201803172058180_initial.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Contact.cs" />
@@ -341,17 +329,8 @@
     <Content Include="Scripts\jquery-3.3.1.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\201712212030157_Initial.resx">
-      <DependentUpon>201712212030157_Initial.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201712291307373_AnonymousContacts.resx">
-      <DependentUpon>201712291307373_AnonymousContacts.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201801092111274_import.resx">
-      <DependentUpon>201801092111274_import.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201803121846022_Summary.resx">
-      <DependentUpon>201803121846022_Summary.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201803172058180_initial.resx">
+      <DependentUpon>201803172058180_initial.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

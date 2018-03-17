@@ -12,11 +12,11 @@ namespace UnitTests
     {
         public void Seed(TestSendSMSHostContext db)
         {
-            db.Status.AddOrUpdate(new Status { Id = 1, Name = "Created" });
-            db.Status.AddOrUpdate(new Status { Id = 2, Name = "Queued" });
-            db.Status.AddOrUpdate(new Status { Id = 3, Name = "Pending" });
-            db.Status.AddOrUpdate(new Status { Id = 4, Name = "Sent" });
-            db.Status.AddOrUpdate(new Status { Id = 0, Name = "Error" });
+            db.Status.AddOrUpdate(new Status { Id = 1, Name = "Created", DefaultColorHex = "#fdfdfe" });
+            db.Status.AddOrUpdate(new Status { Id = 2, Name = "Queued", DefaultColorHex = "#bee5eb" });
+            db.Status.AddOrUpdate(new Status { Id = 3, Name = "Pending", DefaultColorHex = "#ffeeba" });
+            db.Status.AddOrUpdate(new Status { Id = 4, Name = "Sent", DefaultColorHex = "#c3e6cb" });
+            db.Status.AddOrUpdate(new Status { Id = 0, Name = "Error", DefaultColorHex = "#f5c6cb" });
 
             Contact freddy = new Contact
             {

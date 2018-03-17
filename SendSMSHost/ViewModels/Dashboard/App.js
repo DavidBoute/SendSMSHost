@@ -1,8 +1,8 @@
 ﻿var apiURL = '/api/'
 
 // line-chart
-Vue.component('line-chart', {
-    extends: VueChartJs.Line,
+Vue.component('bar-chart', {
+    extends: VueChartJs.Bar,
     mixins: [VueChartJs.mixins.reactiveProp],
     props: ['chart-data', 'options'],
     mounted() {
@@ -16,30 +16,24 @@ var app = new Vue({
     data: {
         message: 'Loading...',
         summaryList: null,
-        graph1_data: {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-            datasets: [
-                {
-                    label: 'Messages Sent',
-                    backgroundColor: '#087979',
-                    data: [40, 20, 12, 39, 10, 40, 39, 80, 40, 20, 12, 11]
-                }
-            ]
-        },
+        graph1_data: null,
         graph1_options: { 
             scales: {
                 yAxes: [{
                     ticks: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        suggestedMax: 10,
                     },
                     gridLines: {
                         display: true
-                    }
+                    },
+                    stacked: true
                 }],
                 xAxes: [{
                     gridLines: {
                         display: true
-                    }
+                    },
+                    stacked: true
                 }]
             },
             legend: {
@@ -56,33 +50,14 @@ var app = new Vue({
     methods: {
         loadData: function () {
             var self = this;
-            //this.fetchSummaryList();
-            setTimeout(function () { self.changeGraph_data(self, 0) }, 1000);
+            self.fetchChartData();
         },
-        changeGraph_data: function (self, dec) {
-            this.graph1_data = {
-                labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-                datasets: [
-                    {
-                        label: 'Messages Sent',
-                        backgroundColor: '#F87979',
-                        data: [40, 20, 12, 39, 10, 40, 39, 80, 40, 20, dec, (dec * 5)]
-                    }
-                ]
-            };
-            dec++;
-            if (dec <= 20) {
-                setTimeout(function () { self.changeGraph_data(self, dec) }, 100);
-            };
-        },
-        fetchSummaryList: function () {
+        fetchChartData: function () {
             self = this;
-            fetch(`${apiURL}Summary`)
+            fetch(`${apiURL}Chartdata/week`)
                 .then(res => res.json())
-                .then(function (summaryList) {
-
-
-                    self.summaryList = summaryList;
+                .then(function (data) {
+                    self.graph1_data = data;
                     self.message = 'Dashboard';
                 })
                 .catch(err => console.error('Fout: ' + err));

@@ -16,6 +16,9 @@ namespace SendSMSHost.Models
         [Required]
         public string Name { get; set; }
 
+        [Required]
+        public string DefaultColorHex { get; set; }
+
         public virtual ICollection<Sms> Sms { get; set; }
     }
 }

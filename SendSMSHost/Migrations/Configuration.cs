@@ -16,11 +16,11 @@ namespace SendSMSHost.Migrations
         protected override void Seed(SendSMSHost.Models.SendSMSHostContext context)
         {
             context.Status.AddOrUpdate(x => x.Id,
-                new Status { Id = 1, Name = "Created" },
-                new Status { Id = 2, Name = "Queued" },
-                new Status { Id = 3, Name = "Pending" },
-                new Status { Id = 4, Name = "Sent" },
-                new Status { Id = 0, Name = "Error" });
+                new Status { Id = 1, Name = "Created", DefaultColorHex = "#fdfdfe" },
+                new Status { Id = 2, Name = "Queued", DefaultColorHex = "#bee5eb" },
+                new Status { Id = 3, Name = "Pending", DefaultColorHex = "#ffeeba" },
+                new Status { Id = 4, Name = "Sent", DefaultColorHex = "#c3e6cb" },
+                new Status { Id = 0, Name = "Error", DefaultColorHex = "#f5c6cb" });
 
             context.Contacts.AddOrUpdate(x => x.Id,
                 new Contact { Id = new Guid("6185B42F-7A64-4D9B-9098-B5E4503E75C7"), FirstName = "Freddy", LastName = "De Testaccount", Number = "+32494240152" });
@@ -34,6 +34,8 @@ namespace SendSMSHost.Migrations
                     StatusId = 1,
                     TimeStamp = DateTime.Now
                 });
+
+            context.SaveChanges();
 
             // Naam van Key aanpassen, nodig voor verbinding MS Access (er mag geen dbo. in staan)
             context.Database.ExecuteSqlCommand(
