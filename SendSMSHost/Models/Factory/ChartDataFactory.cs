@@ -30,7 +30,7 @@ namespace SendSMSHost.Models.Factory
         [JsonProperty("data")]
         public int[] Data { get; set; }
 
-        [JsonProperty("backgroundcolor")]
+        [JsonProperty("backgroundColor")]
         public string BackgroundColor { get; set; }
     }
 
@@ -43,13 +43,15 @@ namespace SendSMSHost.Models.Factory
                         .Select(x => new
                         {
                             Label = x.Name,
-                            Data = x.Sms.Count()
+                            Data = x.Sms.Count(),
+                            BackgroundColor = x.DefaultColorHex
                         })
                         .AsEnumerable()
                         .Select(d => new DataSet
                         {
                             Label = d.Label,
-                            Data = new int[] { d.Data }
+                            Data = new int[] { d.Data },
+                            BackgroundColor = d.BackgroundColor
                         })
                         .ToArray();
 
@@ -82,22 +84,22 @@ namespace SendSMSHost.Models.Factory
                         .OrderBy(dt => dt)
                         .Select(date => d.Sms
                                         .Count(x => date <= x.TimeStamp
-                                                && x.TimeStamp < DbFunctions.AddDays(date, 1)))
+                                                && x.TimeStamp < DbFunctions.AddDays(date, 1))),
+                BackgroundColor = d.DefaultColorHex
             })
             .AsEnumerable()
             .Select(d => new DataSet
             {
                 Label = d.Label,
                 Data = d.Data.ToArray(),
-                //BackgroundColor = "#087979"
+                BackgroundColor = d.BackgroundColor
             })
             .ToArray();
 
             ChartData chartData = new ChartData
             {
                 Labels = dateList.Select(d => d.ToString("ddd dd/MM")).ToArray(),
-                Datasets = data,
-
+                Datasets = data
             };
 
             return chartData;
@@ -122,15 +124,16 @@ namespace SendSMSHost.Models.Factory
                             Data = hourList
                                     .OrderBy(dt => dt)
                                     .Select(h => d.Sms
-                                                .Where(x => h <= x.TimeStamp
-                                                        && x.TimeStamp < DbFunctions.AddHours(h, 1))
-                                                .Count())
+                                                .Count(x => h <= x.TimeStamp
+                                                        && x.TimeStamp < DbFunctions.AddHours(h, 1))),
+                            BackgroundColor = d.DefaultColorHex
                         })
                         .AsEnumerable()
                         .Select(d => new DataSet
                         {
                             Label = d.Label,
-                            Data = d.Data.ToArray()
+                            Data = d.Data.ToArray(),
+                            BackgroundColor = d.BackgroundColor
                         })
                         .ToArray();
 
