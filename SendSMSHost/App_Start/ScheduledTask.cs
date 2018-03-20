@@ -27,6 +27,7 @@ namespace SendSMSHost.App_Start
         }
 
         public void CacheItemRemoved(string taskName, object taskTime, CacheItemRemovedReason r)
+
         {
             if (taskName == "EnqueueSmsToSend")
             {
@@ -71,7 +72,8 @@ namespace SendSMSHost.App_Start
                     {
                         await db.SaveChangesAsync();
 
-                        _signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
+                        ServerSentEventsHub.NotifyChange(_signalRContext, 
+                            new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
                     }
                     catch (Exception ex)
                     {
@@ -148,7 +150,9 @@ namespace SendSMSHost.App_Start
                 try
                 {
                     await db.SaveChangesAsync();
-                    _signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = null, Operation = "POST" });
+
+                    ServerSentEventsHub.NotifyChange(_signalRContext,
+                        new SmsDTOWithOperation { SmsDTO = null, Operation = "POST" });
                 }
                 catch (Exception ex)
                 {

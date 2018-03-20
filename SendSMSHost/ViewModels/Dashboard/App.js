@@ -4,10 +4,10 @@
 Vue.component('bar-chart', {
     extends: VueChartJs.Bar,
     mixins: [VueChartJs.mixins.reactiveProp],
-    props: ['chart-data', 'options'],
+    props: ['options'],
     mounted() {
         this.renderChart(this.chartData, this.options)
-    }
+    },
 })
 
 
@@ -16,8 +16,8 @@ var app = new Vue({
     data: {
         message: 'Loading...',
         summaryList: null,
-        graph1_data: null,
-        graph1_options: { 
+        weekGraph_data: null,
+        weekGraph_options: {
             scales: {
                 yAxes: [{
                     ticks: {
@@ -50,15 +50,20 @@ var app = new Vue({
     methods: {
         loadData: function () {
             var self = this;
-            self.fetchChartData();
+            self.fetchWeekChartData();
+            self.message = 'Dashboard';
         },
         fetchChartData: function () {
+            self = this;
+            self.fetchWeekChartData()
+
+        },
+        fetchWeekChartData: function () {
             self = this;
             fetch(`${apiURL}Chartdata/week`)
                 .then(res => res.json())
                 .then(function (data) {
-                    self.graph1_data = data;
-                    self.message = 'Dashboard';
+                    self.weekGraph_data = data;
                 })
                 .catch(err => console.error('Fout: ' + err));
         },

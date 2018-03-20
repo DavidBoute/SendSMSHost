@@ -58,7 +58,9 @@ namespace SendSMSHost.Controllers
             try
             {
                 await db.SaveChangesAsync();
-                _signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
+
+                ServerSentEventsHub.NotifyChange(_signalRContext,
+                    new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -130,7 +132,8 @@ namespace SendSMSHost.Controllers
                 smsDTO = await db.Sms.ProjectTo<SmsDTO>()
                     .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString());
 
-                _signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "POST" });
+                ServerSentEventsHub.NotifyChange(_signalRContext,
+                    new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "POST" });
             }
             catch (DbUpdateException)
             {
@@ -173,7 +176,9 @@ namespace SendSMSHost.Controllers
             try
             {
                 await db.SaveChangesAsync();
-                _signalRContext.Clients.All.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "DELETE" });
+
+                ServerSentEventsHub.NotifyChange(_signalRContext,
+                    new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "DELETE" });
             }
             catch (Exception ex)
             {

@@ -215,7 +215,7 @@ var app = new Vue({
         toEditMode: function (isEdit)
         {
             self = this;
-            this.editMode = true;
+            self.editMode = true;
         },
         saveEdit: function ()
         {
@@ -231,21 +231,9 @@ var app = new Vue({
             var myRequest = new Request(`${apiURL}Sms/${self.currentSms.Id}`, ajaxConfig)
 
             fetch(myRequest)
-                .then(function ()
-                {
-                    // Editvenster updaten
-                    self.currentSms.Id = res.Id;
-                    self.currentSms.ContactId = res.ContactId;
-                    self.currentSms.ContactFirstName = res.ContactFirstName;
-                    self.currentSms.ContactLastName = res.ContactLastName;
-                    self.currentSms.ContactNumber = res.ContactNumber;
-                    self.currentSms.Message = res.Message;
-                    self.currentSms.TimeStamp = res.TimeStamp;
-                    self.currentSms.StatusName = res.StatusName;
+                .catch(err => console.error('Fout: ' + err));
 
-                    self.editMode = false;
-                })
-                .catch(err => console.error('Fout: ' + err));;
+            self.editMode = false;
         },
         deleteSms: function ()
         {
@@ -260,6 +248,8 @@ var app = new Vue({
 
             fetch(myRequest)
                 .catch(err => console.error('Fout: ' + err));
+
+            self.currentSms = null;
         },
         getShortenedMessage: function (text)
         {

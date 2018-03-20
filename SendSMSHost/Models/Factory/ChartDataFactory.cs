@@ -32,6 +32,12 @@ namespace SendSMSHost.Models.Factory
 
         [JsonProperty("backgroundColor")]
         public string BackgroundColor { get; set; }
+
+        [JsonProperty("borderColor")]
+        public string BorderColor { get; set; }
+
+        [JsonProperty("borderWidth")]
+        public int BorderWidth { get; set; }
     }
 
     public class ForeverChartDataFactory : IChartDataFactory
@@ -51,7 +57,10 @@ namespace SendSMSHost.Models.Factory
                         {
                             Label = d.Label,
                             Data = new int[] { d.Data },
-                            BackgroundColor = d.BackgroundColor
+                            BackgroundColor = d.BackgroundColor,
+                            BorderColor = "#868E96",
+                            BorderWidth = 1
+
                         })
                         .ToArray();
 
@@ -92,7 +101,9 @@ namespace SendSMSHost.Models.Factory
             {
                 Label = d.Label,
                 Data = d.Data.ToArray(),
-                BackgroundColor = d.BackgroundColor
+                BackgroundColor = d.BackgroundColor,
+                BorderColor = "#868E96",
+                BorderWidth = 1
             })
             .ToArray();
 
@@ -133,7 +144,9 @@ namespace SendSMSHost.Models.Factory
                         {
                             Label = d.Label,
                             Data = d.Data.ToArray(),
-                            BackgroundColor = d.BackgroundColor
+                            BackgroundColor = d.BackgroundColor,
+                            BorderColor = "#868E96",
+                            BorderWidth = 1
                         })
                         .ToArray();
 

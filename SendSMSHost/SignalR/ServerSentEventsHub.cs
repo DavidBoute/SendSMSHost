@@ -31,6 +31,7 @@ namespace SendSMSHost.SignalR
         public void NotifyChange(SmsDTOWithOperation smsDTOWithClient)
         {
             Clients.Others.notifyChangeToPage(smsDTOWithClient);
+            Clients.All.notifyChangeToCharts();
         }
 
         /// <summary>
@@ -90,6 +91,7 @@ namespace SendSMSHost.SignalR
                 await db.SaveChangesAsync();
                 Clients.Caller.updateSms(smsDTO);
                 Clients.Others.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
+                Clients.All.notifyChangeToCharts();
             }
             catch (Exception ex)
             {
@@ -98,7 +100,7 @@ namespace SendSMSHost.SignalR
         }
 
         /// <summary>
-        /// Verwijdert een Sms aan in de database.
+        /// Verwijdert een Sms in de database.
         /// </summary>
         /// <param name="smsDTO">de te verwijderen sms</param>
         public async Task RequestDeleteSms(SmsDTO smsDTO)
@@ -112,12 +114,19 @@ namespace SendSMSHost.SignalR
                     await db.SaveChangesAsync();
                     Clients.Caller.deleteSms(smsDTO);
                     Clients.Others.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "DELETE" });
+                    Clients.All.notifyChangeToCharts();
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
                 }
             }
+        }
+
+        public static void NotifyChange(IHubContext hubContext, SmsDTOWithOperation smsDTOWithOperation )
+        {
+            hubContext.Clients.All.notifyChangeToPage(smsDTOWithOperation);
+            hubContext.Clients.All.notifyChangeToCharts();
         }
 
         public ServerSentEventsHub()
