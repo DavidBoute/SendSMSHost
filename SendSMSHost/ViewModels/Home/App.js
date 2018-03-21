@@ -297,10 +297,9 @@ var app = new Vue({
         },
         currentSmsSelectedStatusChanged: function ()
         {
-            selectedStatus = this.contacts.filter(x => x.Id == this.currentSms.ContactId)[0];
-            this.currentSms.ContactFirstName = selectedContact.FirstName;
-            this.currentSms.ContactLastName = selectedContact.LastName;
-            this.currentSms.ContactNumber = selectedContact.Number;
+            // Uitzoeken: is deze function überhaupt nodig
+            selectedStatus = this.statusList.filter(x => x.Id == this.currentSms.StatusId)[0];
+            this.currentSms.StatusId = selectedStatus.Id;
         },
         sendSelected: function (smsId)
         {
