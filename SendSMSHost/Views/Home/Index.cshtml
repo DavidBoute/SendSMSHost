@@ -13,12 +13,17 @@
     <!--Modal voor selectie nieuwe sms: contact of nummer-->
     <modal-select v-on:close="closedNewSmsSelectModal"
                   v-bind:show="showNewSmsSelectModal"></modal-select>
+
     <header class="col-md-6">
         <h3>
             {{ message }}
             <span v-if="showButtons">
                 <button v-on:click="showNewSmsSelectModal = true" class="btn btn-warning">New</button>
-                <button v-on:click="loadData()" class="btn btn-warning">Refresh</button>
+                <button v-on:click="loadData()" class="btn btn-warning">Refresh</button>  
+            </span>
+            <span v-if="showButtons" style="float: right">
+                <button v-on:click="sendSelected(currentSms.Id)" class="btn btn-success">Send Selected</button>
+                <button v-on:click="toggleSendPending()" class="btn btn-success">Send Pending</button>
             </span>
         </h3>
         <nav>
@@ -68,7 +73,15 @@
                 </tr>
                 <tr>
                     <td>Status:</td>
-                    <td>{{ currentSms.StatusName}}</td>
+                    <td>
+                        <select v-model="currentSms.StatusId" class="form-control"
+                                v-on:change="currentSmsSelectedStatusChanged">
+                            <option v-for="status in statusList"
+                                    v-bind:value="status.Id">
+                                {{ status.Name }}
+                            </option>
+                        </select>
+                    </td>
                 </tr>
             </table>
             <button v-on:click="saveEdit" class="btn btn-primary">Save</button>

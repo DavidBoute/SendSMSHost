@@ -129,7 +129,8 @@ var app = new Vue({
         showNewSmsSelectModal: false,
         showNewSmsContactModal: false,
         showNewSmsNumberModal: false,
-        newSms: null
+        newSms: null,
+        statusList: null
     },
     created: function ()
     {
@@ -141,6 +142,7 @@ var app = new Vue({
         {
             this.fetchSmsList();
             this.fetchContacts();
+            this.fetchStatusList();
         },
         fetchSmsList: function ()
         {
@@ -209,6 +211,15 @@ var app = new Vue({
                 .then(function (res)
                 {
                     self.contacts = res;
+                })
+                .catch(err => console.error('Fout: ' + err));
+        },
+        fetchStatusList: function () {
+            self = this;
+            fetch(`${apiURL}Status`)
+                .then(res => res.json())
+                .then(function (res) {
+                    self.statusList = res;
                 })
                 .catch(err => console.error('Fout: ' + err));
         },
@@ -283,6 +294,21 @@ var app = new Vue({
             this.currentSms.ContactFirstName = selectedContact.FirstName;
             this.currentSms.ContactLastName = selectedContact.LastName;
             this.currentSms.ContactNumber = selectedContact.Number;
-        }
+        },
+        currentSmsSelectedStatusChanged: function ()
+        {
+            selectedStatus = this.contacts.filter(x => x.Id == this.currentSms.ContactId)[0];
+            this.currentSms.ContactFirstName = selectedContact.FirstName;
+            this.currentSms.ContactLastName = selectedContact.LastName;
+            this.currentSms.ContactNumber = selectedContact.Number;
+        },
+        sendSelected: function (smsId)
+        {
+            SSEHub.server.sendSelectedSms(smsId);
+        },
+        toggleSendPending: function ()
+        {
+            SSEHub.server.toggleSendPending();
+        },
     }
 });

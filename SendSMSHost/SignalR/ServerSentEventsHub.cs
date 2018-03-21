@@ -123,6 +123,25 @@ namespace SendSMSHost.SignalR
             }
         }
 
+        /// <summary>
+        /// Geeft aan telefoon de opdracht om een sms te zenden, ongeacht de huidige status
+        /// </summary>
+        /// <param name="smsID">Id van de sms</param>
+        public async Task SendSelectedSms(Guid smsId)
+        {
+            var smsDTO = await db.Sms.ProjectTo<SmsDTO>()
+                .SingleOrDefaultAsync(x => x.Id == smsId.ToString());
+            Clients.Others.sendSelectedSms(smsDTO);
+        }
+
+        /// <summary>
+        /// Start het automatisch zenden van Pending sms'en
+        /// </summary>
+        public void toggleSendPending()
+        {
+            Clients.Others.toggleSendPending(true);
+        }
+
         public static void NotifyChange(IHubContext hubContext, SmsDTOWithOperation smsDTOWithOperation )
         {
             hubContext.Clients.All.notifyChangeToPage(smsDTOWithOperation);
