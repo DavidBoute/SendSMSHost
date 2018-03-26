@@ -300,6 +300,7 @@ var app = new Vue({
             // Uitzoeken: is deze function überhaupt nodig
             selectedStatus = this.statusList.filter(x => x.Id == this.currentSms.StatusId)[0];
             this.currentSms.StatusId = selectedStatus.Id;
+            this.currentSms.StatusName = selectedStatus.Name;
         },
         sendSelected: function (smsId)
         {
