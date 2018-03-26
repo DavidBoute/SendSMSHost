@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using FluentScheduler;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 using SendSMSHost.Models;
@@ -7,176 +8,244 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Caching;
+using System.Web.Hosting;
 
-namespace SendSMSHost.App_Start
+namespace SendSMSHost
 {
-    // Voert taken iedere x seconden uit
-    // https://stackoverflow.blog/2008/07/18/easy-background-tasks-in-aspnet/
+    // https://github.com/fluentscheduler/FluentScheduler
     public class ScheduledTask
     {
-        private CacheItemRemovedCallback _onCacheRemove = null;
-        private IHubContext _signalRContext;
-
-        public void Start()
+        public class TaskRegistry : Registry
         {
-            AddTask("EnqueueSmsToSend", 10);
-            AddTask("ImportSms", 10);
-        }
-
-        public void CacheItemRemoved(string taskName, object taskTime, CacheItemRemovedReason r)
-
-        {
-            if (taskName == "EnqueueSmsToSend")
+            public TaskRegistry()
             {
-                EnqueueSmsToSend(taskName, taskTime);
-            }
-            else if (taskName == "ImportSms")
-            {
-                ImportSms(taskName, taskTime);
+                Schedule<EnqueueSmsToSend>().ToRunEvery(1).Seconds();
+                Schedule<ImportSms>().ToRunEvery(10).Seconds();
             }
         }
 
-        /// <summary>
-        /// Zorgt er voor dat er  steeds 5 sms'en zijn om te verwerken
-        /// Status Queued of Pending
-        /// </summary>
-        /// <param name="taskName"></param>
-        /// <param name="taskTime"></param>
-        private async void EnqueueSmsToSend(string taskName, object taskTime)
+        public class EnqueueSmsToSend : IJob, IRegisteredObject
         {
-            // nieuwe context opvragen
-            var db = new SendSMSHostContext();
+            const int BATCHSIZE = 5;
 
-            // De lijst van sms'en met de status Queued aanvullen tot 5
-            // aanpassen in database + clients verwittigen
+            private IHubContext _signalRContext
+                    = GlobalHost.ConnectionManager.GetHubContext<ServerSentEventsHub>();
 
-            var createdSmsList = db.Status.Include("sms").FirstOrDefault(y => y.Name == "Created").Sms.OrderBy(z => z.TimeStamp).ToList();
-            var queuedSmsList = db.Status.Include("sms").FirstOrDefault(y => y.Name == "Queued").Sms.ToList();
-            if (createdSmsList.Count() > 0
-                && queuedSmsList.Count() < 5)
+            private readonly object _lock = new object();
+            private bool _shuttingDown;
+
+            public EnqueueSmsToSend()
             {
-                var changeToQueuedSmsList = createdSmsList.Take(
-                    Math.Min(5 - queuedSmsList.Count(), createdSmsList.Count()));
-                Status statusQueued = db.Status.FirstOrDefault(x => x.Name == "Queued");
-
-                var queuedSmsDTOList = new List<SmsDTO>();
-                foreach (var sms in changeToQueuedSmsList)
-                {
-                    sms.Status = statusQueued;
-                    SmsDTO smsDTO = Mapper.Map<SmsDTO>(sms);
-
-                    try
-                    {
-                        await db.SaveChangesAsync();
-
-                        ServerSentEventsHub.NotifyChange(_signalRContext, 
-                            new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
-                }
+                // Register this job with the hosting environment.
+                // Allows for a more graceful stop of the job, in the case of IIS shutting down.
+                HostingEnvironment.RegisterObject(this);
             }
 
-            // re-add our task so it recurs
-            AddTask(taskName, Convert.ToInt32(taskTime));
-        }
-
-        /// <summary>
-        /// Leest periodiek de tabel ImportSms uit en voegt sms'en en nummers toe aan database
-        /// Verwittigt via Signal R de andere applicaties
-        /// </summary>
-        /// <param name="taskName"></param>
-        /// <param name="taskTime"></param>
-        private async void ImportSms(string taskName, object taskTime)
-        {
-            // nieuwe context opvragen
-            var db = new SendSMSHostContext();
-
-            // kijken als er reccords in de tabel ImportSms zijn
-            // en toevoegen aan genormaliseerde tabellen.
-
-            if (db.ImportSms.Count() > 0)
+            public void Execute()
             {
-                Status statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
-
-                var smsToImportList = db.ImportSms.ToList();
-                foreach (var smsToImport in smsToImportList)
-                {
-
-                    // kijken of nummer al in gebruik is
-                    Contact contact = db.Contacts.SingleOrDefault(x => x.Number == smsToImport.ContactNumber);
-                    if (contact == null) // nieuw contact maken
-                    {
-                        contact = new Contact
-                        {
-                            Id = Guid.NewGuid(),
-                            FirstName = (smsToImport.ContactFirstName != String.Empty ?
-                                            smsToImport.ContactFirstName : smsToImport.ContactNumber),
-                            LastName = smsToImport.ContactLastName,
-                            Number = smsToImport.ContactNumber,
-                            IsAnonymous = (smsToImport.ContactFirstName != String.Empty)
-                        };
-
-                        db.Contacts.Add(contact);
-                        try
-                        {
-                            await db.SaveChangesAsync();
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.Message);
-                            throw;
-                        }
-                    }
-
-                    Sms sms = new Sms
-                    {
-                        Id = Guid.NewGuid(),
-                        ContactId = contact.Id,
-                        Message = smsToImport.Message,
-                        StatusId = statusCreated.Id,
-                        TimeStamp = DateTime.Now,
-                    };
-
-                    db.Sms.Add(sms);
-                    db.ImportSms.Remove(smsToImport);
-                }
-
                 try
                 {
-                    await db.SaveChangesAsync();
+                    lock (_lock)
+                    {
+                        if (_shuttingDown)
+                            return;
 
-                    ServerSentEventsHub.NotifyChange(_signalRContext,
-                        new SmsDTOWithOperation { SmsDTO = null, Operation = "POST" });
+                        // nieuwe dbContext opvragen
+                        using (SendSMSHostContext db = new SendSMSHostContext())
+                        {
+                            // De lijst van sms'en met de status Queued of Pending aanvullen tot batchSize
+                            // aanpassen in database + clients verwittigen
+
+                            Debug.WriteLine($"[{DateTime.Now}] Checking sms to queue");
+
+                            Status statusQueued = db.Status.FirstOrDefault(x => x.Name == "Queued");
+                            Status statusPending = db.Status.FirstOrDefault(x => x.Name == "Pending");
+                            Status statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
+
+                            int queuedCount = db.Sms
+                                                    .Count(x => x.StatusId == statusQueued.Id
+                                                            || x.StatusId == statusPending.Id);
+                            int createdCount = db.Sms
+                                                    .Count(x => x.StatusId == statusCreated.Id);
+
+                            int amountToChange =  0;
+                            if (BATCHSIZE > queuedCount)
+                            {
+                                amountToChange = Math.Min(BATCHSIZE - queuedCount, createdCount);
+                            }
+
+                            if (amountToChange > 0)
+                            {
+                                Debug.WriteLine($"[{DateTime.Now}] Enqueuing {amountToChange} sms");
+
+                                var changeToQueuedSmsList = db.Sms
+                                                                .Where(x => x.StatusId == statusCreated.Id)
+                                                                .OrderBy(z => z.TimeStamp)
+                                                                .Take(amountToChange)
+                                                                .ToList();
+
+                                var queuedSmsDTOList = new List<SmsDTO>();
+                                foreach (var sms in changeToQueuedSmsList)
+                                {
+                                    sms.Status = statusQueued;
+                                    SmsDTO smsDTO = Mapper.Map<SmsDTO>(sms);
+
+                                    try
+                                    {
+                                        db.SaveChanges();
+
+                                        ServerSentEventsHub.NotifyChange(_signalRContext,
+                                            new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine(ex.Message);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                catch (Exception ex)
+                finally
                 {
-                    Console.WriteLine(ex.Message);
-                    throw;
+                    // Always unregister the job when done.
+                    HostingEnvironment.UnregisterObject(this);
                 }
             }
 
-            // re-add our task so it recurs
-            AddTask(taskName, Convert.ToInt32(taskTime));
+            public void Stop(bool immediate)
+            {
+                // Locking here will wait for the lock in Execute to be released until this code can continue.
+                lock (_lock)
+                {
+                    _shuttingDown = true;
+                }
+
+                HostingEnvironment.UnregisterObject(this);
+            }
         }
 
-        private void AddTask(string name, int seconds)
+        public class ImportSms : IJob, IRegisteredObject
         {
-            _onCacheRemove = new CacheItemRemovedCallback(CacheItemRemoved);
-            HttpRuntime.Cache.Insert(name, seconds, null,
-                DateTime.Now.AddSeconds(seconds), Cache.NoSlidingExpiration,
-                CacheItemPriority.NotRemovable, _onCacheRemove);
-        }
+            private IHubContext _signalRContext
+                    = GlobalHost.ConnectionManager.GetHubContext<ServerSentEventsHub>();
 
-        public ScheduledTask()
-        {
-            _signalRContext = GlobalHost.ConnectionManager.GetHubContext<ServerSentEventsHub>();
-        }
+            private readonly object _lock = new object();
+            private bool _shuttingDown;
 
+            public ImportSms()
+            {
+                // Register this job with the hosting environment.
+                // Allows for a more graceful stop of the job, in the case of IIS shutting down.
+                HostingEnvironment.RegisterObject(this);
+            }
+
+            public void Execute()
+            {
+                try
+                {
+                    lock (_lock)
+                    {
+                        if (_shuttingDown)
+                            return;
+
+                        // nieuwe context opvragen
+                        using (var db = new SendSMSHostContext())
+                        {
+                            // kijken als er reccords in de tabel ImportSms zijn
+                            // en toevoegen aan genormaliseerde tabellen.
+                            Debug.WriteLine($"[{DateTime.Now}] Checking sms to import");
+
+                            int importSmsCount = db.ImportSms.Count();
+                            if (importSmsCount > 0)
+                            {
+                                Debug.WriteLine($"[{DateTime.Now}] Importing {importSmsCount} sms");
+                            
+                                Status statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
+
+                                var smsToImportList = db.ImportSms.ToList();
+                                foreach (var smsToImport in smsToImportList)
+                                {
+                                    // kijken of nummer al in gebruik is
+                                    Contact contact = db.Contacts.SingleOrDefault(x => x.Number == smsToImport.ContactNumber);
+                                    if (contact == null) // nieuw contact maken
+                                    {
+                                        Debug.WriteLine($"[{DateTime.Now}] Creating new contact");
+                                        contact = new Contact
+                                        {
+                                            Id = Guid.NewGuid(),
+                                            FirstName = (smsToImport.ContactFirstName != String.Empty ?
+                                                            smsToImport.ContactFirstName : smsToImport.ContactNumber),
+                                            LastName = smsToImport.ContactLastName,
+                                            Number = smsToImport.ContactNumber,
+                                            IsAnonymous = (smsToImport.ContactFirstName != String.Empty)
+                                        };
+
+                                        db.Contacts.Add(contact);
+                                        try
+                                        {
+                                            db.SaveChanges();
+                                            Debug.WriteLine($"[{DateTime.Now}] Contact created: {contact.FirstName} {contact.LastName}");
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Console.WriteLine(ex.Message);
+                                            throw;
+                                        }
+                                    }
+
+                                    Debug.WriteLine($"[{DateTime.Now}] Creating new sms");
+                                    Sms sms = new Sms
+                                    {
+                                        Id = Guid.NewGuid(),
+                                        ContactId = contact.Id,
+                                        Message = smsToImport.Message,
+                                        StatusId = statusCreated.Id,
+                                        TimeStamp = DateTime.Now,
+                                    };
+
+                                    db.Sms.Add(sms);
+                                    db.ImportSms.Remove(smsToImport);
+                                }
+
+                                try
+                                {
+                                    db.SaveChanges();
+
+                                    ServerSentEventsHub.NotifyChange(_signalRContext,
+                                        new SmsDTOWithOperation { SmsDTO = null, Operation = "POST" });
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine(ex.Message);
+                                    throw;
+                                }
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    // Always unregister the job when done.
+                    HostingEnvironment.UnregisterObject(this);
+                }
+            }
+
+            public void Stop(bool immediate)
+            {
+                // Locking here will wait for the lock in Execute to be released until this code can continue.
+                lock (_lock)
+                {
+                    _shuttingDown = true;
+                }
+
+                HostingEnvironment.UnregisterObject(this);
+            }
+        }
     }
 }
