@@ -20,6 +20,7 @@ namespace SendSMSHost.Models
         public DbSet<Sms> Sms { get; set; }
         public DbSet<Status> Status { get; set; }
         public DbSet<ImportSms> ImportSms { get; set; }
+        public DbSet<Log> Log { get; set; }
     }
 
     public interface ISendSMSHostContext
@@ -28,5 +29,6 @@ namespace SendSMSHost.Models
         DbSet<Sms> Sms { get; set; }
         DbSet<Status> Status { get; set; }
         DbSet<ImportSms> ImportSms { get; set; }
+        DbSet<Log> Log { get; set; }
     }
 }

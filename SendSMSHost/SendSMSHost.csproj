@@ -230,14 +230,15 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\201803191928161_initial.cs" />
-    <Compile Include="Migrations\201803191928161_initial.Designer.cs">
-      <DependentUpon>201803191928161_initial.cs</DependentUpon>
+    <Compile Include="Migrations\201803281918166_initial.cs" />
+    <Compile Include="Migrations\201803281918166_initial.Designer.cs">
+      <DependentUpon>201803281918166_initial.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Contact.cs" />
     <Compile Include="Models\DTO.cs" />
     <Compile Include="Models\ImportSms.cs" />
+    <Compile Include="Models\Log.cs" />
     <Compile Include="Models\SendSMSHostContext.cs" />
     <Compile Include="Models\Sms.cs" />
     <Compile Include="Models\Status.cs" />
@@ -334,8 +335,8 @@
     <Content Include="Scripts\jquery-3.3.1.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\201803191928161_initial.resx">
-      <DependentUpon>201803191928161_initial.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201803281918166_initial.resx">
+      <DependentUpon>201803281918166_initial.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

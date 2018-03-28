@@ -57,6 +57,18 @@ namespace SendSMSHost.Migrations
                     })
                 .PrimaryKey(t => t.Id);
             
+            CreateTable(
+                "dbo.Logs",
+                c => new
+                    {
+                        LogId = c.Int(nullable: false, identity: true),
+                        SmsId = c.String(),
+                        Timestamp = c.DateTime(nullable: false),
+                        Operation = c.String(),
+                        StatusName = c.String(),
+                    })
+                .PrimaryKey(t => t.LogId);
+            
         }
         
         public override void Down()
@@ -65,6 +77,7 @@ namespace SendSMSHost.Migrations
             DropForeignKey("dbo.Sms", "ContactId", "dbo.Contacts");
             DropIndex("dbo.Sms", new[] { "ContactId" });
             DropIndex("dbo.Sms", new[] { "StatusId" });
+            DropTable("dbo.Logs");
             DropTable("dbo.ImportSms");
             DropTable("dbo.Status");
             DropTable("dbo.Sms");

@@ -28,10 +28,12 @@ namespace SendSMSHost.SignalR
         /// Brengt andere clients op de hoogte dat een bepaalde SmsDTO aangepast is
         /// </summary>
         /// <param name="smsDTOWithClient">de aangepaste SmsDTO met bewerkingsgegevens</param>
-        public void NotifyChange(SmsDTOWithOperation smsDTOWithClient)
+        public void NotifyChange(SmsDTOWithOperation smsDTOWithOperation)
         {
-            Clients.Others.notifyChangeToPage(smsDTOWithClient);
+            Clients.Others.notifyChangeToPage(smsDTOWithOperation);
             Clients.All.notifyChangeToCharts();
+
+            UpdateLog(db, smsDTOWithOperation);
         }
 
         /// <summary>
@@ -90,8 +92,12 @@ namespace SendSMSHost.SignalR
             {
                 await db.SaveChangesAsync();
                 Clients.Caller.updateSms(smsDTO);
-                Clients.Others.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
+
+                SmsDTOWithOperation smsDTOWithOperation = new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" };
+                Clients.Others.notifyChangeToPage(smsDTOWithOperation);
                 Clients.All.notifyChangeToCharts();
+
+                UpdateLog(db, smsDTOWithOperation);
             }
             catch (Exception ex)
             {
@@ -113,8 +119,11 @@ namespace SendSMSHost.SignalR
                 {
                     await db.SaveChangesAsync();
                     Clients.Caller.deleteSms(smsDTO);
-                    Clients.Others.notifyChangeToPage(new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "DELETE" });
+                    SmsDTOWithOperation smsDTOWithOperation = new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "DELETE" };
+                    Clients.Others.notifyChangeToPage(smsDTOWithOperation);
                     Clients.All.notifyChangeToCharts();
+
+                    UpdateLog(db, smsDTOWithOperation);
                 }
                 catch (Exception ex)
                 {
@@ -146,6 +155,22 @@ namespace SendSMSHost.SignalR
         {
             hubContext.Clients.All.notifyChangeToPage(smsDTOWithOperation);
             hubContext.Clients.All.notifyChangeToCharts();
+
+            SendSMSHostContext db = new SendSMSHostContext();
+            UpdateLog(db, smsDTOWithOperation);
+        }
+
+        public static void UpdateLog(SendSMSHostContext db, SmsDTOWithOperation smsDTOWithOperation)
+        {
+            db.Log.Add(new Log
+            {
+                SmsId = smsDTOWithOperation.SmsDTO.Id,
+                Operation = smsDTOWithOperation.Operation,
+                Timestamp = DateTime.Now,
+                StatusName = smsDTOWithOperation.SmsDTO.StatusName
+            });
+
+            db.SaveChanges();
         }
 
         public ServerSentEventsHub()

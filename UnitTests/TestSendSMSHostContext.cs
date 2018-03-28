@@ -22,5 +22,6 @@ namespace UnitTests
         public DbSet<Sms> Sms { get; set; }
         public DbSet<Status> Status { get; set; }
         public DbSet<ImportSms> ImportSms { get; set; }
+        public DbSet<Log> Log { get; set; }
     }
 }

@@ -13,7 +13,7 @@ namespace SendSMSHost.Migrations
         
         string IMigrationMetadata.Id
         {
-            get { return "201803191928161_initial"; }
+            get { return "201803281918166_initial"; }
         }
         
         string IMigrationMetadata.Source
