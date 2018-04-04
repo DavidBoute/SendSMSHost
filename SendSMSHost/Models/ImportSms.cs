@@ -13,8 +13,6 @@ namespace SendSMSHost.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public string Message { get; set; }
-        public string ContactFirstName { get; set; }
-        public string ContactLastName { get; set; }
         public string ContactNumber { get; set; }
     }
 

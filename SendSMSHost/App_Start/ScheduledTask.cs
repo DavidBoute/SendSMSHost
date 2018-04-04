@@ -29,6 +29,8 @@ namespace SendSMSHost
             }
         }
 
+        static bool IsBusyImporting { get; set; }
+
         public class EnqueueSmsToSend : IJob, IRegisteredObject
         {
             const int BATCHSIZE = 5;
@@ -55,6 +57,9 @@ namespace SendSMSHost
                         if (_shuttingDown)
                             return;
 
+                        if (IsBusyImporting)
+                            return;
+
                         // nieuwe dbContext opvragen
                         using (SendSMSHostContext db = new SendSMSHostContext())
                         {
@@ -73,7 +78,7 @@ namespace SendSMSHost
                             int createdCount = db.Sms
                                                     .Count(x => x.StatusId == statusCreated.Id);
 
-                            int amountToChange =  0;
+                            int amountToChange = 0;
                             if (BATCHSIZE > queuedCount)
                             {
                                 amountToChange = Math.Min(BATCHSIZE - queuedCount, createdCount);
@@ -93,6 +98,7 @@ namespace SendSMSHost
                                 foreach (var sms in changeToQueuedSmsList)
                                 {
                                     sms.Status = statusQueued;
+                                    sms.TimeStamp = DateTime.Now;
                                     SmsDTO smsDTO = Mapper.Map<SmsDTO>(sms);
 
                                     try
@@ -154,79 +160,94 @@ namespace SendSMSHost
                         if (_shuttingDown)
                             return;
 
+                        if (IsBusyImporting)
+                            return;
+
+                        IsBusyImporting = true;
+                        Debug.WriteLine($"[{DateTime.Now}] Checking sms to import");
+
                         // nieuwe context opvragen
                         using (var db = new SendSMSHostContext())
                         {
                             // kijken als er reccords in de tabel ImportSms zijn
                             // en toevoegen aan genormaliseerde tabellen.
-                            Debug.WriteLine($"[{DateTime.Now}] Checking sms to import");
 
                             int importSmsCount = db.ImportSms.Count();
                             if (importSmsCount > 0)
                             {
                                 Debug.WriteLine($"[{DateTime.Now}] Importing {importSmsCount} sms");
-                            
+
                                 Status statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
 
-                                var smsToImportList = db.ImportSms.ToList();
-                                foreach (var smsToImport in smsToImportList)
-                                {
-                                    // kijken of nummer al in gebruik is
-                                    Contact contact = db.Contacts.SingleOrDefault(x => x.Number == smsToImport.ContactNumber);
-                                    if (contact == null) // nieuw contact maken
-                                    {
-                                        Debug.WriteLine($"[{DateTime.Now}] Creating new contact");
-                                        contact = new Contact
-                                        {
-                                            Id = Guid.NewGuid(),
-                                            FirstName = (smsToImport.ContactFirstName != String.Empty ?
-                                                            smsToImport.ContactFirstName : smsToImport.ContactNumber),
-                                            LastName = smsToImport.ContactLastName,
-                                            Number = smsToImport.ContactNumber,
-                                            IsAnonymous = (smsToImport.ContactFirstName != String.Empty)
-                                        };
+                                // eerst alle contacten aanmaken
+                                var contactNumberList = db.ImportSms
+                                                            .Select(x => x.ContactNumber)
+                                                            .Distinct()
+                                                            .Where(x => !db.Contacts
+                                                                            .Select(y => y.Number)
+                                                                            .Contains(x))
+                                                            .AsEnumerable()
+                                                            .Select(x => new Contact
+                                                            {
+                                                                Id = Guid.NewGuid(),
+                                                                Number = x,
+                                                                IsAnonymous = true
+                                                            });
 
-                                        db.Contacts.Add(contact);
-                                        try
-                                        {
-                                            db.SaveChanges();
-                                            Debug.WriteLine($"[{DateTime.Now}] Contact created: {contact.FirstName} {contact.LastName}");
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            Console.WriteLine(ex.Message);
-                                            throw;
-                                        }
-                                    }
 
-                                    Debug.WriteLine($"[{DateTime.Now}] Creating new sms");
-                                    Sms sms = new Sms
-                                    {
-                                        Id = Guid.NewGuid(),
-                                        ContactId = contact.Id,
-                                        Message = smsToImport.Message,
-                                        StatusId = statusCreated.Id,
-                                        TimeStamp = DateTime.Now,
-                                    };
-
-                                    db.Sms.Add(sms);
-                                    db.ImportSms.Remove(smsToImport);
-                                }
+                                db.Contacts.AddRange(contactNumberList);
+                                int contactNumberListCount = contactNumberList.Count();
 
                                 try
                                 {
                                     db.SaveChanges();
-
-                                    ServerSentEventsHub.NotifyChange(_signalRContext,
-                                        new SmsDTOWithOperation { SmsDTO = null, Operation = "POST" });
+                                    Debug.WriteLine($"[{DateTime.Now}] Created {contactNumberListCount} new contacts");
                                 }
                                 catch (Exception ex)
                                 {
                                     Console.WriteLine(ex.Message);
-                                    throw;
+                                    throw ex;
+                                }
+
+                                // dan alle sms'en aanmaken
+                                var smsToImport = db.ImportSms
+                                                    .AsEnumerable()
+                                                    .Select(x => new Sms
+                                                    {
+                                                        Id = Guid.NewGuid(),
+                                                        Contact = db.Contacts
+                                                                        .SingleOrDefault(y => y.Number == x.ContactNumber),
+                                                        Message = x.Message,
+                                                        Status = statusCreated,
+                                                        TimeStamp = DateTime.Now,
+                                                    });
+
+                                db.Sms.AddRange(smsToImport);
+                                var smsToImportList = smsToImport.ToList();
+
+                                // dan ImportSms leeg maken
+                                db.ImportSms.RemoveRange(db.ImportSms);
+
+                                try
+                                { 
+                                    db.SaveChanges();
+                                    Debug.WriteLine($"[{DateTime.Now}] Created {importSmsCount} new sms");
+
+                                    foreach (Sms s in smsToImportList)
+                                    {
+                                        ServerSentEventsHub.NotifyChange(_signalRContext,
+                                            new SmsDTOWithOperation { SmsDTO = Mapper.Map<SmsDTO>(s), Operation = "POST" });
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine(ex.Message);
+                                    throw ex;
                                 }
                             }
                         }
+                        IsBusyImporting = false;
+                        Debug.WriteLine($"[{DateTime.Now}] Importing finished");
                     }
                 }
                 finally

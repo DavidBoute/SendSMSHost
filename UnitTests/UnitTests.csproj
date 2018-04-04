@@ -63,13 +63,12 @@
     <Reference Include="System.Transactions" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HourChartDataTest.cs" />
     <Compile Include="TestInitialData.cs" />
     <Compile Include="TestSendSMSHostContext.cs" />
-    <Compile Include="DaySummaryTest.cs" />
-    <Compile Include="ForeverSummaryTest.cs" />
     <Compile Include="DayChartDataTest.cs" />
+    <Compile Include="ForeverChartDataTest.cs" />
     <Compile Include="WeekChartDataTest.cs" />
-    <Compile Include="WeekSummaryTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

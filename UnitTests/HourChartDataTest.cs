@@ -8,7 +8,7 @@ using System.Linq;
 namespace UnitTests
 {
     [TestClass]
-    public class WeekChartDataTest
+    public class HourChartDataTest
     {
         private TestSendSMSHostContext db;
 
@@ -35,35 +35,35 @@ namespace UnitTests
                 {
                     SmsId = "2",
                     StatusName = "Error",
-                    Timestamp = DateTime.Now.AddDays(-1)
+                    Timestamp = DateTime.Now.AddMinutes(-15)
                 });
             db.Log.Add(
                 new Log
                 {
                     SmsId = "3",
                     StatusName = "Created",
-                    Timestamp = DateTime.Now.AddDays(-2)
+                    Timestamp = DateTime.Now.AddMinutes(-25)
                 });
             db.Log.Add(
                 new Log
                 {
                     SmsId = "4",
                     StatusName = "Created",
-                    Timestamp = DateTime.Now.AddDays(-3)
+                    Timestamp = DateTime.Now.AddMinutes(-30)
                 });
             db.Log.Add(
                 new Log
                 {
                     SmsId = "1",
                     StatusName = "Created",
-                    Timestamp = DateTime.Now.AddDays(-3)
+                    Timestamp = DateTime.Now.AddMinutes(-30)
                 });
             db.Log.Add(
                 new Log
                 {
                     SmsId = "2",
                     StatusName = "Created",
-                    Timestamp = DateTime.Now.AddDays(-3)
+                    Timestamp = DateTime.Now.AddMinutes(-30)
                 });
 
             #endregion
@@ -72,26 +72,26 @@ namespace UnitTests
         }
 
         [TestMethod]
-        public void WeekSummaryCreateChartDataTest_IntervalCount()
+        public void HourSummaryCreateChartDataTest_IntervalCount()
         {
             // Arrange  
-            IChartDataFactory summaryFactory = new WeekChartDataFactory();
+            IChartDataFactory summaryFactory = new HourChartDataFactory();
 
             // Act          
             ChartData chartData = summaryFactory.CreateChartData(db);
 
             // Assert
-            int expectedValue = 7;
+            int expectedValue = 12;
             int actualValue = chartData.Labels.Length;
             Assert.IsTrue(actualValue == expectedValue,
                 "Count of Label");
         }
 
         [TestMethod]
-        public void WeekSummaryCreateChartDataTest_StatusCreatedCount()
+        public void HourSummaryCreateChartDataTest_StatusCreatedCount()
         {
             // Arrange  
-            IChartDataFactory summaryFactory = new WeekChartDataFactory();
+            IChartDataFactory summaryFactory = new HourChartDataFactory();
 
             // Act          
             ChartData chartData = summaryFactory.CreateChartData(db);
@@ -104,10 +104,10 @@ namespace UnitTests
         }
 
         [TestMethod]
-        public void WeekSummaryCreateChartDataTest_StatusQueuedCount()
+        public void HourSummaryCreateChartDataTest_StatusQueuedCount()
         {
             // Arrange  
-            IChartDataFactory summaryFactory = new WeekChartDataFactory();
+            IChartDataFactory summaryFactory = new HourChartDataFactory();
 
             // Act          
             ChartData chartData = summaryFactory.CreateChartData(db);
@@ -120,10 +120,10 @@ namespace UnitTests
         }
 
         [TestMethod]
-        public void WeekSummaryCreateChartDataTest_StatusErrorCount()
+        public void HourSummaryCreateChartDataTest_StatusErrorCount()
         {
             // Arrange  
-            IChartDataFactory summaryFactory = new WeekChartDataFactory();
+            IChartDataFactory summaryFactory = new HourChartDataFactory();
 
             // Act          
             ChartData chartData = summaryFactory.CreateChartData(db);
@@ -136,10 +136,10 @@ namespace UnitTests
         }
 
         [TestMethod]
-        public void WeekSummaryCreateChartDataTest_StatusPendingCount()
+        public void HourSummaryCreateChartDataTest_StatusPendingCount()
         {
             // Arrange  
-            IChartDataFactory summaryFactory = new WeekChartDataFactory();
+            IChartDataFactory summaryFactory = new HourChartDataFactory();
 
             // Act          
             ChartData chartData = summaryFactory.CreateChartData(db);
@@ -152,10 +152,10 @@ namespace UnitTests
         }
 
         [TestMethod]
-        public void WeekSummaryCreateChartDataTest_StatusSentCount()
+        public void HourSummaryCreateChartDataTest_StatusSentCount()
         {
             // Arrange  
-            IChartDataFactory summaryFactory = new WeekChartDataFactory();
+            IChartDataFactory summaryFactory = new HourChartDataFactory();
 
             // Act          
             ChartData chartData = summaryFactory.CreateChartData(db);

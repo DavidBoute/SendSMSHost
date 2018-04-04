@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Effort;
 using SendSMSHost.Models.Factory;
 using SendSMSHost.Models;
+using System.Linq;
 
 namespace UnitTests
 {
@@ -10,8 +11,6 @@ namespace UnitTests
     public class DayChartDataTest
     {
         private TestSendSMSHostContext db;
-
-        const string FREDDY_ID = "6185B42F-7A64-4D9B-9098-B5E4503E75C7";
 
         [TestInitialize]
         public void Initialize()
@@ -22,62 +21,50 @@ namespace UnitTests
             var init = new TestDataInitialiser();
             init.Seed(db);
 
-            #region Add Sms
+            #region Add Logs
 
-            db.Sms.Add(
-                new Sms
+            db.Log.Add(
+                new Log
                 {
-                    Id = Guid.NewGuid(),
-                    ContactId = Guid.Parse(FREDDY_ID),
-                    Message = "Test",
-                    StatusId = 1,
-                    TimeStamp = DateTime.Now
+                    SmsId = "1",
+                    StatusName = "Queued",
+                    Timestamp = DateTime.Now
                 });
-            db.Sms.Add(
-                new Sms
+            db.Log.Add(
+                new Log
                 {
-                    Id = Guid.NewGuid(),
-                    ContactId = Guid.Parse(FREDDY_ID),
-                    Message = "Test",
-                    StatusId = 2,
-                    TimeStamp = DateTime.Now.AddHours(-1)
+                    SmsId = "2",
+                    StatusName = "Error",
+                    Timestamp = DateTime.Now.AddHours(-1)
                 });
-            db.Sms.Add(
-                new Sms
+            db.Log.Add(
+                new Log
                 {
-                    Id = Guid.NewGuid(),
-                    ContactId = Guid.Parse(FREDDY_ID),
-                    Message = "Test",
-                    StatusId = 3,
-                    TimeStamp = DateTime.Now.AddHours(-2)
+                    SmsId = "3",
+                    StatusName = "Created",
+                    Timestamp = DateTime.Now.AddHours(-2)
                 });
-            db.Sms.Add(
-                new Sms
+            db.Log.Add(
+                new Log
                 {
-                    Id = Guid.NewGuid(),
-                    ContactId = Guid.Parse(FREDDY_ID),
-                    Message = "Test",
-                    StatusId = 4,
-                    TimeStamp = DateTime.Now.AddHours(-3)
+                    SmsId = "4",
+                    StatusName = "Created",
+                    Timestamp = DateTime.Now.AddHours(-3)
                 });
-            db.Sms.Add(
-                new Sms
+            db.Log.Add(
+                new Log
                 {
-                    Id = Guid.NewGuid(),
-                    ContactId = Guid.Parse(FREDDY_ID),
-                    Message = "Test",
-                    StatusId = 0,
-                    TimeStamp = DateTime.Now.AddHours(-3)
+                    SmsId = "1",
+                    StatusName = "Created",
+                    Timestamp = DateTime.Now.AddHours(-3)
                 });
-            db.Sms.Add(
-            new Sms
-            {
-                Id = Guid.NewGuid(),
-                ContactId = Guid.Parse(FREDDY_ID),
-                Message = "Test",
-                StatusId = 0,
-                TimeStamp = DateTime.Now.AddHours(-3)
-            });
+            db.Log.Add(
+                new Log
+                {
+                    SmsId = "2",
+                    StatusName = "Created",
+                    Timestamp = DateTime.Now.AddHours(-3)
+                });
 
             #endregion
 
@@ -98,6 +85,95 @@ namespace UnitTests
             int actualValue = chartData.Labels.Length;
             Assert.IsTrue(actualValue == expectedValue,
                 "Count of Label");
+        }
+
+        [TestMethod]
+        public void DaySummaryCreateChartDataTest_StatusCreatedCount()
+        {
+            // Arrange  
+            IChartDataFactory summaryFactory = new DayChartDataFactory();
+
+            // Act          
+            ChartData chartData = summaryFactory.CreateChartData(db);
+
+            // Assert
+            int expectedValue = 2;
+            int actualValue = CountStatusInDataset(chartData, "Created");
+            Assert.IsTrue(actualValue == expectedValue,
+                "Count of Status Created");
+        }
+
+        [TestMethod]
+        public void DaySummaryCreateChartDataTest_StatusQueuedCount()
+        {
+            // Arrange  
+            IChartDataFactory summaryFactory = new DayChartDataFactory();
+
+            // Act          
+            ChartData chartData = summaryFactory.CreateChartData(db);
+
+            // Assert
+            int expectedValue = 1;
+            int actualValue = CountStatusInDataset(chartData, "Queued");
+            Assert.IsTrue(actualValue == expectedValue,
+                "Count of Status Queued");
+        }
+
+        [TestMethod]
+        public void DaySummaryCreateChartDataTest_StatusErrorCount()
+        {
+            // Arrange  
+            IChartDataFactory summaryFactory = new DayChartDataFactory();
+
+            // Act          
+            ChartData chartData = summaryFactory.CreateChartData(db);
+
+            // Assert
+            int expectedValue = 1;
+            int actualValue = CountStatusInDataset(chartData, "Error");
+            Assert.IsTrue(actualValue == expectedValue,
+                "Count of Status Error");
+        }
+
+        [TestMethod]
+        public void DaySummaryCreateChartDataTest_StatusPendingCount()
+        {
+            // Arrange  
+            IChartDataFactory summaryFactory = new DayChartDataFactory();
+
+            // Act          
+            ChartData chartData = summaryFactory.CreateChartData(db);
+
+            // Assert
+            int expectedValue = 0;
+            int actualValue = CountStatusInDataset(chartData, "Pending");
+            Assert.IsTrue(actualValue == expectedValue,
+                "Count of Status Pending");
+        }
+
+        [TestMethod]
+        public void DaySummaryCreateChartDataTest_StatusSentCount()
+        {
+            // Arrange  
+            IChartDataFactory summaryFactory = new DayChartDataFactory();
+
+            // Act          
+            ChartData chartData = summaryFactory.CreateChartData(db);
+
+            // Assert
+            int expectedValue = 0;
+            int actualValue = CountStatusInDataset(chartData, "Sent");
+            Assert.IsTrue(actualValue == expectedValue,
+                "Count of Status Sent");
+        }
+
+        public int CountStatusInDataset(ChartData chartData, string statusName)
+        {
+            return chartData
+                        .Datasets
+                        .FirstOrDefault(x => x.Label == statusName)
+                        .Data
+                        .Sum();
         }
     }
 }

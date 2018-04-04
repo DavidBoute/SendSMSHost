@@ -95,9 +95,11 @@ namespace SendSMSHost.SignalR
 
                 SmsDTOWithOperation smsDTOWithOperation = new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" };
                 Clients.Others.notifyChangeToPage(smsDTOWithOperation);
-                Clients.All.notifyChangeToCharts();
 
                 UpdateLog(db, smsDTOWithOperation);
+                Clients.All.notifyChangeToCharts();
+
+
             }
             catch (Exception ex)
             {
@@ -121,9 +123,9 @@ namespace SendSMSHost.SignalR
                     Clients.Caller.deleteSms(smsDTO);
                     SmsDTOWithOperation smsDTOWithOperation = new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "DELETE" };
                     Clients.Others.notifyChangeToPage(smsDTOWithOperation);
-                    Clients.All.notifyChangeToCharts();
 
                     UpdateLog(db, smsDTOWithOperation);
+                    Clients.All.notifyChangeToCharts();
                 }
                 catch (Exception ex)
                 {
@@ -154,10 +156,10 @@ namespace SendSMSHost.SignalR
         public static void NotifyChange(IHubContext hubContext, SmsDTOWithOperation smsDTOWithOperation )
         {
             hubContext.Clients.All.notifyChangeToPage(smsDTOWithOperation);
-            hubContext.Clients.All.notifyChangeToCharts();
 
             SendSMSHostContext db = new SendSMSHostContext();
             UpdateLog(db, smsDTOWithOperation);
+            hubContext.Clients.All.notifyChangeToCharts();
         }
 
         public static void UpdateLog(SendSMSHostContext db, SmsDTOWithOperation smsDTOWithOperation)

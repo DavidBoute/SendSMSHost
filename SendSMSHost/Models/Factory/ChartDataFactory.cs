@@ -44,29 +44,31 @@ namespace SendSMSHost.Models.Factory
     {
         public ChartData CreateChartData(ISendSMSHostContext db)
         {
-            var data = db.Status
-                        .Include("Sms")
-                        .Select(x => new
-                        {
-                            Label = x.Name,
-                            Data = x.Sms.Count(),
-                            BackgroundColor = x.DefaultColorHex
-                        })
-                        .AsEnumerable()
-                        .Select(d => new DataSet
-                        {
-                            Label = d.Label,
-                            Data = new int[] { d.Data },
-                            BackgroundColor = d.BackgroundColor,
-                            BorderColor = "#868E96",
-                            BorderWidth = 1
+            var lastLogs = db.Log
+                            .GroupBy(x => x.SmsId)
+                            .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
 
-                        })
-                        .ToArray();
+            var data = db.Status
+                            .Select(s => new
+                            {
+                                Label = s.Name,
+                                Data = lastLogs.Count(l => l.StatusName == s.Name),
+                                BackgroundColor = s.DefaultColorHex
+                            })
+                            .AsEnumerable()
+                            .Select(d => new DataSet
+                            {
+                                Label = d.Label,
+                                Data = new int[] { d.Data },
+                                BackgroundColor = d.BackgroundColor,
+                                BorderColor = "#868E96",
+                                BorderWidth = 1
+                            })
+                            .ToArray();
 
             ChartData chartData = new ChartData
             {
-                Labels = null,
+                Labels = data.Select(x => x.Label).ToArray(),
                 Datasets = data
             };
 
@@ -84,28 +86,31 @@ namespace SendSMSHost.Models.Factory
                 dateList.Add(DateTime.Today.AddDays(-i));
             }
 
+            var lastLogs = db.Log
+                            .GroupBy(x => x.SmsId)
+                            .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
+
             var data = db.Status
-            .Include("Sms")
-            .Select(d => new
-            {
-                Label = d.Name,
-                Data = dateList
-                        .OrderBy(dt => dt)
-                        .Select(date => d.Sms
-                                        .Count(x => date <= x.TimeStamp
-                                                && x.TimeStamp < DbFunctions.AddDays(date, 1))),
-                BackgroundColor = d.DefaultColorHex
-            })
-            .AsEnumerable()
-            .Select(d => new DataSet
-            {
-                Label = d.Label,
-                Data = d.Data.ToArray(),
-                BackgroundColor = d.BackgroundColor,
-                BorderColor = "#868E96",
-                BorderWidth = 1
-            })
-            .ToArray();
+                            .Select(s => new
+                            {
+                                Label = s.Name,
+                                Data = dateList
+                                        .OrderBy(dt => dt)
+                                        .Select(date => lastLogs.Count(x => date <= x.Timestamp
+                                                                && x.Timestamp < DbFunctions.AddDays(date, 1)
+                                                                && x.StatusName == s.Name)),
+                                BackgroundColor = s.DefaultColorHex
+                            })
+                            .AsEnumerable()
+                            .Select(d => new DataSet
+                            {
+                                Label = d.Label,
+                                Data = d.Data.ToArray(),
+                                BackgroundColor = d.BackgroundColor,
+                                BorderColor = "#868E96",
+                                BorderWidth = 1
+                            })
+                            .ToArray();
 
             ChartData chartData = new ChartData
             {
@@ -119,36 +124,41 @@ namespace SendSMSHost.Models.Factory
 
     public class DayChartDataFactory : IChartDataFactory
     {
+        const int INTERVAL_HOURS = 1;
+
         public ChartData CreateChartData(ISendSMSHostContext db)
         {
             List<DateTime> hourList = new List<DateTime>();
-            for (int i = 0; i <= 23; i++)
+            for (int i = 0; i < (24 / INTERVAL_HOURS); i++)
             {
-                hourList.Add(DateTime.Today.AddHours(i));
+                hourList.Add(DateTime.Today.AddHours(i* INTERVAL_HOURS));
             }
 
+            var lastLogs = db.Log
+                            .GroupBy(x => x.SmsId)
+                            .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
+
             var data = db.Status
-                        .Include("Sms")
-                        .Select(d => new
-                        {
-                            Label = d.Name,
-                            Data = hourList
-                                    .OrderBy(dt => dt)
-                                    .Select(h => d.Sms
-                                                .Count(x => h <= x.TimeStamp
-                                                        && x.TimeStamp < DbFunctions.AddHours(h, 1))),
-                            BackgroundColor = d.DefaultColorHex
-                        })
-                        .AsEnumerable()
-                        .Select(d => new DataSet
-                        {
-                            Label = d.Label,
-                            Data = d.Data.ToArray(),
-                            BackgroundColor = d.BackgroundColor,
-                            BorderColor = "#868E96",
-                            BorderWidth = 1
-                        })
-                        .ToArray();
+                            .Select(s => new
+                            {
+                                Label = s.Name,
+                                Data = hourList
+                                        .OrderBy(dt => dt)
+                                        .Select(h => lastLogs.Count(x => h <= x.Timestamp
+                                                                && x.Timestamp < DbFunctions.AddHours(h, INTERVAL_HOURS)
+                                                                && x.StatusName == s.Name)),
+                                BackgroundColor = s.DefaultColorHex
+                            })
+                            .AsEnumerable()
+                            .Select(d => new DataSet
+                            {
+                                Label = d.Label,
+                                Data = d.Data.ToArray(),
+                                BackgroundColor = d.BackgroundColor,
+                                BorderColor = "#868E96",
+                                BorderWidth = 1
+                            })
+                            .ToArray();
 
             ChartData chartData = new ChartData
             {
@@ -162,6 +172,51 @@ namespace SendSMSHost.Models.Factory
 
     public class HourChartDataFactory : IChartDataFactory
     {
-        public ChartData CreateChartData(ISendSMSHostContext db) { return new ChartData(); }
+        const int INTERVAL_MINUTES = 5;
+
+        public ChartData CreateChartData(ISendSMSHostContext db)
+        {
+            List<DateTime> minuteList = new List<DateTime>();
+            DateTime dateHour = DateTime.Today.AddHours(DateTime.Now.Hour);
+
+            for (int i = 0; i < (60 / INTERVAL_MINUTES); i++)
+            {
+                minuteList.Add(dateHour.AddMinutes(i * INTERVAL_MINUTES));
+            }
+
+            var lastLogs = db.Log
+                            .GroupBy(x => x.SmsId)
+                            .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
+
+            var data = db.Status
+                            .Select(s => new
+                            {
+                                Label = s.Name,
+                                Data = minuteList
+                                        .OrderBy(dt => dt)
+                                        .Select(h => lastLogs.Count(x => h <= x.Timestamp
+                                                                && x.Timestamp < DbFunctions.AddMinutes(h, INTERVAL_MINUTES)
+                                                                && x.StatusName == s.Name)),
+                                BackgroundColor = s.DefaultColorHex
+                            })
+                            .AsEnumerable()
+                            .Select(d => new DataSet
+                            {
+                                Label = d.Label,
+                                Data = d.Data.ToArray(),
+                                BackgroundColor = d.BackgroundColor,
+                                BorderColor = "#868E96",
+                                BorderWidth = 1
+                            })
+                            .ToArray();
+
+            ChartData chartData = new ChartData
+            {
+                Labels = minuteList.Select(d => d.ToString("hh:mm")).ToArray(),
+                Datasets = data
+            };
+
+            return chartData;
+        }
     }
 }
