@@ -5,10 +5,10 @@
 
 <article id="app" class="row" v-cloak>
     <!--Modal voor maken nieuwe sms op basis van bestaand contact-->
-    <modal-new-sms-contact v-on:close="showNewSmsContactModal = false" v-bind:show="showNewSmsContactModal" v-bind:sms="sms" v-bind:contacts="contacts"></modal-new-sms-contact>
+    <modal-new-sms-contact v-on:close="showNewSmsContactModal = false" v-bind:show="showNewSmsContactModal" v-bind:contacts="contactList"></modal-new-sms-contact>
 
     <!--Modal voor maken nieuwe sms op basis van nummer-->
-    <modal-new-sms-number v-on:close="showNewSmsNumberModal = false" v-bind:show="showNewSmsNumberModal" v-bind:sms="sms" v-bind:contacts="contacts"></modal-new-sms-number>
+    <modal-new-sms-number v-on:close="showNewSmsNumberModal = false" v-bind:show="showNewSmsNumberModal"></modal-new-sms-number>
 
     <!--Modal voor selectie nieuwe sms: contact of nummer-->
     <modal-select v-on:close="closedNewSmsSelectModal"
@@ -19,7 +19,7 @@
             {{ message }}
             <span v-if="showButtons">
                 <button v-on:click="showNewSmsSelectModal = true" class="btn btn-warning">New</button>
-                <button v-on:click="loadData()" class="btn btn-warning">Refresh</button>  
+                <button v-on:click="loadData()" class="btn btn-warning">Refresh</button>
             </span>
             <span v-if="showButtons" style="float: right">
                 <button v-on:click="sendSelected(currentSms.Id)" class="btn btn-success">Send Selected</button>
@@ -28,8 +28,8 @@
         </h3>
         <nav>
             <ul class="list-group">
-                <li v-for="s in sms"
-                    v-on:click="fetchSmsDetails(s)" :class="getSmsClass(s)"
+                <li v-for="s in smsList"
+                    v-on:click="selectSms(s)" :class="getSmsClass(s)"
                     style="cursor:pointer">
                     <span class="list-group-item-heading">{{ s.ContactFirstName + ' ' + s.ContactLastName }}</span>
                     <span class="list-group-item-text text-muted"> ({{ s.ContactNumber }})</span>
@@ -47,25 +47,25 @@
                     <td>Contact:</td>
                     <td>
                         <select v-model="currentSms.ContactId" class="form-control"
-                                v-on:change="currentSmsSelectedContactChanged">
-                            <option v-for="contact in contacts"
+                                v-on:change="currentSmsSelectedContactChanged(currentSms.ContactId)">
+                            <option v-for="contact in contactList"
                                     v-bind:value="contact.Id">
                                 {{ contact.FirstName + ' ' + contact.LastName }}
                             </option>
                         </select>
                     </td>
                 </tr>
-                <tr>
+                <tr v-if="currentSms.ContactIsNotAnonymous">
                     <td>Contact First Name:</td>
-                    <td>{{ currentSms.ContactFirstName}}</td>
+                    <td><input v-model="currentSms.ContactFirstName" class="form-control"></td>
                 </tr>
-                <tr>
+                <tr v-if="currentSms.ContactIsNotAnonymous">
                     <td>Contact Last Name:</td>
-                    <td>{{ currentSms.ContactLastName}}</td>
+                    <td><input v-model="currentSms.ContactLastName" class="form-control"></td>
                 </tr>
                 <tr>
                     <td>Nummer:</td>
-                    <td>{{ currentSms.ContactNumber}}</td>
+                    <td><input v-model="currentSms.ContactNumber" class="form-control"></td>
                 </tr>
                 <tr>
                     <td>Bericht:</td>
@@ -75,7 +75,7 @@
                     <td>Status:</td>
                     <td>
                         <select v-model="currentSms.StatusId" class="form-control"
-                                v-on:change="currentSmsSelectedStatusChanged">
+                                v-on:change="currentSmsSelectedStatusChanged(currentSms.StatusId)">
                             <option v-for="status in statusList"
                                     v-bind:value="status.Id">
                                 {{ status.Name }}
@@ -84,11 +84,12 @@
                     </td>
                 </tr>
             </table>
-            <button v-on:click="saveEdit" class="btn btn-primary">Save</button>
+            <button v-on:click="saveEdit()" class="btn btn-primary">Save</button>
+            <button v-on:click="hideEditMode()" class="btn btn-primary">Cancel</button>
         </div>
         <div v-else>
             <table>
-                <tr>
+                <tr v-if="currentSms.ContactIsNotAnonymous">
                     <td>Contact:</td>
                     <td class="smsContactName">{{  currentSms.ContactFirstName + ' ' + currentSms.ContactLastName}}</td>
                 </tr>
@@ -105,8 +106,8 @@
                     <td>{{ currentSms.StatusName}}</td>
                 </tr>
             </table>
-            <button v-on:click="toEditMode(true)" class="btn btn-primary">Edit</button>
-            <button v-on:click="deleteSms()" class="btn btn-danger">Delete</button>
+            <button v-on:click="showEditMode()" class="btn btn-primary">Edit</button>
+            <button v-on:click="requestDeleteSms(currentSms)" class="btn btn-danger">Delete</button>
         </div>
     </article>
 </article>
@@ -175,7 +176,7 @@
                                             <td>Contact:</td>
                                             <td>
                                                 <select v-model="newSms.ContactId" class="form-control">
-                                                    <option v-for="contact in contacts" v-bind:value="contact.Id">{{ contact.FirstName +' '+ contact.LastName }}</option>
+                                                    <option v-for="contact in contactList" v-bind:value="contact.Id">{{ contact.FirstName +' '+ contact.LastName }}</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -244,16 +245,18 @@
         </transition>
     </script>
 
-    <!--Reference to Vue code -->
-    <script src="~/ViewModels/Home/App.js"></script>
-
     <!--The jQuery library is required and is referenced by default in _Layout.cshtml. -->
+    
     <!--Reference the SignalR library. -->
     <script src="~/Scripts/jquery.signalR-2.2.3.min.js"></script>
     <!--Reference the autogenerated SignalR hub script. -->
     <script src="~/signalr/hubs"></script>
-    <!--SignalR connection script-->
-    <script src="~/SignalR/SignalR-ServerSentEvents.js"></script>
-    <!--SignalR script with page-specific methods.-->
+    <!--Script with page-specific SignalR methods.-->
     <script src="~/ViewModels/Home/SignalR.js"></script>
+
+    <!--Script with page-specific Ajax methods.-->
+    @*<script src="~/ViewModels/Home/Ajax.js"></script>*@
+
+    <!--Reference to page-specific Vue code -->
+    <script src="~/ViewModels/Home/App.js"></script>
 }

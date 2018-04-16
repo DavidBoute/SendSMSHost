@@ -87,6 +87,7 @@ namespace SendSMSHost.Models.Factory
             }
 
             var lastLogs = db.Log
+                            .Where(x=> x.Timestamp >= dateList.Min())
                             .GroupBy(x => x.SmsId)
                             .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
 
@@ -135,6 +136,7 @@ namespace SendSMSHost.Models.Factory
             }
 
             var lastLogs = db.Log
+                            .Where(x => x.Timestamp >= hourList.Min())
                             .GroupBy(x => x.SmsId)
                             .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
 
@@ -185,6 +187,7 @@ namespace SendSMSHost.Models.Factory
             }
 
             var lastLogs = db.Log
+                            .Where(x => x.Timestamp >= minuteList.Min())
                             .GroupBy(x => x.SmsId)
                             .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
 

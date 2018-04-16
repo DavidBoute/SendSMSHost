@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNet.SignalR;
+using Microsoft.AspNet.SignalR.Hubs;
 using SendSMSHost.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -14,26 +16,18 @@ namespace SendSMSHost.SignalR
     public class ServerSentEventsHub : Hub
     {
         private SendSMSHostContext db;
-        
+
+        #region Request methods 
+
+        // Clients vragen gegevens in db op
+
         /// <summary>
         /// Stuur een boodschap naar alle clients, om als popup te tonen
         /// </summary>
         /// <param name="message">de boodschap</param>
-        public void Send(string message)
+        public void RequestDisplayMessage(string message)
         {
             Clients.All.displayMessage(message);
-        }
-
-        /// <summary>
-        /// Brengt andere clients op de hoogte dat een bepaalde SmsDTO aangepast is
-        /// </summary>
-        /// <param name="smsDTOWithClient">de aangepaste SmsDTO met bewerkingsgegevens</param>
-        public void NotifyChange(SmsDTOWithOperation smsDTOWithOperation)
-        {
-            Clients.Others.notifyChangeToPage(smsDTOWithOperation);
-            Clients.All.notifyChangeToCharts();
-
-            UpdateLog(db, smsDTOWithOperation);
         }
 
         /// <summary>
@@ -42,12 +36,12 @@ namespace SendSMSHost.SignalR
         /// <param name="includeCreated">worden de smsDTO's met status Created mee gestuurd</param>
         public void RequestSmsList(bool includeCreated)
         {
-            List<SmsDTO> smsList;
+            List<SmsDTO> smsDTOList;
 
             if (!includeCreated)
             {
                 var statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
-                smsList = db.Sms
+                smsDTOList = db.Sms
                             .Where(x => x.StatusId != statusCreated.Id)
                             .OrderBy(x => x.TimeStamp)
                             .ProjectTo<SmsDTO>()
@@ -55,13 +49,13 @@ namespace SendSMSHost.SignalR
             }
             else
             {
-                smsList = db.Sms
+                smsDTOList = db.Sms
                             .OrderBy(x => x.TimeStamp)
                             .ProjectTo<SmsDTO>()
                             .ToList();
             }
 
-            Clients.Caller.getSmsList(smsList);
+            Clients.Caller.getSmsList(smsDTOList);
         }
 
         /// <summary>
@@ -79,10 +73,52 @@ namespace SendSMSHost.SignalR
         }
 
         /// <summary>
+        /// Stuurt een lijst van StatusDTO's naar de caller
+        /// </summary>
+        public void RequestContactList()
+        {
+            List<ContactDTO> contactDTOList;
+
+            contactDTOList = db.Contacts
+                            .Where(x => !x.IsAnonymous)
+                            .ProjectTo<ContactDTO>()
+                            .ToList();
+
+            Clients.Caller.getContactList(contactDTOList);
+        }
+
+
+        // Clients vragen wijzigingen in db aan
+
+        /// <summary>
+        /// Maakt een Sms in de database.
+        /// </summary>
+        /// <param name="smsDTO">de te maken sms</param>
+        public async Task RequestCreateSms(SmsDTO smsDTO)
+        {
+            Sms sms = await db.Sms.FindAsync(Guid.Parse(smsDTO.Id));
+            if (sms == null)
+            {
+                db.Sms.Add(sms);
+                try
+                {
+                    await db.SaveChangesAsync();
+
+                    UpdateLog(db, smsDTO, "DELETE");
+                    NotifyCreateSms(smsDTO, Clients);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
+            }
+        }
+
+        /// <summary>
         /// Past een Sms aan in de database.
         /// </summary>
         /// <param name="smsDTO">de aan te passen sms</param>
-        public async Task RequestUpdateSms(SmsDTO smsDTO)
+        public async Task RequestEditSms(SmsDTO smsDTO)
         {
             Sms newSms = Mapper.Map<Sms>(smsDTO);
             db.Set<Sms>().Attach(newSms);
@@ -91,19 +127,13 @@ namespace SendSMSHost.SignalR
             try
             {
                 await db.SaveChangesAsync();
-                Clients.Caller.updateSms(smsDTO);
 
-                SmsDTOWithOperation smsDTOWithOperation = new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" };
-                Clients.Others.notifyChangeToPage(smsDTOWithOperation);
-
-                UpdateLog(db, smsDTOWithOperation);
-                Clients.All.notifyChangeToCharts();
-
-
+                UpdateLog(db, smsDTO, "PUT");
+                NotifyEditSms(smsDTO, Clients);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Debug.WriteLine(ex.Message);
             }
         }
 
@@ -120,19 +150,71 @@ namespace SendSMSHost.SignalR
                 try
                 {
                     await db.SaveChangesAsync();
-                    Clients.Caller.deleteSms(smsDTO);
-                    SmsDTOWithOperation smsDTOWithOperation = new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "DELETE" };
-                    Clients.Others.notifyChangeToPage(smsDTOWithOperation);
 
-                    UpdateLog(db, smsDTOWithOperation);
-                    Clients.All.notifyChangeToCharts();
+                    UpdateLog(db, smsDTO, "DELETE");
+                    NotifyDeleteSms(smsDTO, Clients);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Debug.WriteLine(ex.Message);
                 }
             }
         }
+
+        #endregion
+
+        #region Notify methods // Brengen clients op de hoogte van wijzigingen
+
+        public void NotifyCreateSms(SmsDTO smsDTO, IHubCallerConnectionContext<dynamic> clients)
+        {
+            clients.All.notifyCreateSms(smsDTO);
+            clients.All.notifyChangeToCharts();
+        }
+
+        public void NotifyEditSms(SmsDTO smsDTO, IHubCallerConnectionContext<dynamic> clients)
+        {
+            clients.All.notifyEditSms(smsDTO);
+            clients.All.notifyChangeToCharts();
+        }
+
+        public void NotifyDeleteSms(SmsDTO smsDTO, IHubCallerConnectionContext<dynamic> clients)
+        {
+            clients.All.notifyDeleteSms(smsDTO);
+            clients.All.notifyChangeToCharts();
+        }
+
+        /// <summary>
+        /// Algemene methode om clients te verwittigen van wijzigingen 
+        /// Zorgt voor volledige herinladen lijst
+        /// Voor gebruik door server
+        /// </summary>
+        /// <param name="hubContext"></param>
+        /// <param name="smsDTOWithOperation"></param>
+        public static void NotifyChange(IHubContext hubContext, SmsDTOWithOperation smsDTOWithOperation)
+        {
+            hubContext.Clients.All.notifyChangeToSmsList();
+
+            SendSMSHostContext db = new SendSMSHostContext();
+            UpdateLog(db, smsDTOWithOperation);
+            hubContext.Clients.All.notifyChangeToCharts();
+        }
+
+        /// <summary>
+        /// Brengt andere clients op de hoogte dat een bepaalde SmsDTO aangepast is
+        /// Zorgt voor volledige herinladen lijst
+        /// </summary>
+        /// <param name="smsDTOWithClient">de aangepaste SmsDTO met bewerkingsgegevens</param>
+        public void NotifyChange(SmsDTOWithOperation smsDTOWithOperation)
+        {
+            Clients.Others.notifyChangeToSmsList();
+            Clients.All.notifyChangeToCharts();
+
+            UpdateLog(db, smsDTOWithOperation);
+        }
+
+        #endregion
+
+        #region Send methods // Zorgen er voor dat app begint te sturen
 
         /// <summary>
         /// Geeft aan telefoon de opdracht om een sms te zenden, ongeacht de huidige status
@@ -145,6 +227,8 @@ namespace SendSMSHost.SignalR
             Clients.Others.sendSelectedSms(smsDTO);
         }
 
+        // TODO: automatisch zenden uitschakelen
+
         /// <summary>
         /// Start het automatisch zenden van Pending sms'en
         /// </summary>
@@ -153,15 +237,11 @@ namespace SendSMSHost.SignalR
             Clients.Others.toggleSendPending(true);
         }
 
-        public static void NotifyChange(IHubContext hubContext, SmsDTOWithOperation smsDTOWithOperation )
-        {
-            hubContext.Clients.All.notifyChangeToPage(smsDTOWithOperation);
+        #endregion
 
-            SendSMSHostContext db = new SendSMSHostContext();
-            UpdateLog(db, smsDTOWithOperation);
-            hubContext.Clients.All.notifyChangeToCharts();
-        }
+        #region Logging methods // Zorgen dat bewerkingen bijgehouden worden
 
+        // Nog te verwijderen
         public static void UpdateLog(SendSMSHostContext db, SmsDTOWithOperation smsDTOWithOperation)
         {
             db.Log.Add(new Log
@@ -174,6 +254,21 @@ namespace SendSMSHost.SignalR
 
             db.SaveChanges();
         }
+
+        public static void UpdateLog(SendSMSHostContext db, SmsDTO smsDTO, string operation)
+        {
+            db.Log.Add(new Log
+            {
+                SmsId = smsDTO.Id,
+                Operation = operation,
+                Timestamp = DateTime.Now,
+                StatusName = smsDTO.StatusName
+            });
+
+            db.SaveChanges();
+        }
+
+        #endregion
 
         public ServerSentEventsHub()
         {

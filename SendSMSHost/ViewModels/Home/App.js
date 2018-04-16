@@ -9,9 +9,8 @@ Vue.component('modal-select', {
 // modal-template-new-sms-contact
 Vue.component('modal-new-sms-contact', {
     template: '#modal-template-new-sms-contact',
-    props: ['show', 'sms', 'contacts'],
-    data: function ()
-    {
+    props: ['show', 'contactList'],
+    data: function () {
         return {
             newSms: {
                 Id: null,
@@ -27,8 +26,7 @@ Vue.component('modal-new-sms-contact', {
         }
     },
     methods: {
-        save: function ()
-        {
+        save: function () {
             var self = this
             // opslaan - ajax configuratie
             var ajaxHeaders = new Headers();
@@ -42,8 +40,7 @@ Vue.component('modal-new-sms-contact', {
             var myRequest = new Request(self.apiUrl + 'Sms/', ajaxConfig)
 
             fetch(myRequest)
-                .then(function ()
-                {
+                .then(function () {
                     // newSms resetten
                     self.newSms = new Object();
                     self.newSms.Id = null;
@@ -64,9 +61,8 @@ Vue.component('modal-new-sms-contact', {
 // modal-template-new-sms-number
 Vue.component('modal-new-sms-number', {
     template: '#modal-template-new-sms-number',
-    props: ['show', 'sms'],
-    data: function ()
-    {
+    props: ['show'],
+    data: function () {
         return {
             newSms: {
                 Id: null,
@@ -82,8 +78,7 @@ Vue.component('modal-new-sms-number', {
         }
     },
     methods: {
-        save: function ()
-        {
+        save: function () {
             var self = this
 
             // opslaan - ajax configuratie
@@ -98,8 +93,7 @@ Vue.component('modal-new-sms-number', {
             var myRequest = new Request(self.apiUrl + 'Sms/', ajaxConfig)
 
             fetch(myRequest)
-                .then(function ()
-                {
+                .then(function () {
                     // newSms resetten
                     self.newSms = new Object();
                     self.newSms.Id = null;
@@ -119,75 +113,40 @@ Vue.component('modal-new-sms-number', {
 
 var app = new Vue({
     el: '#app',
+    mixins: [connectionMethods],
     data: {
         message: 'Loading...',
-        sms: null,
+        smsList: null,
+        contactList: null,
+        statusList: null,
         currentSms: null,
-        contacts: null,
         editMode: false,
         showButtons: false,
         showNewSmsSelectModal: false,
         showNewSmsContactModal: false,
         showNewSmsNumberModal: false,
         newSms: null,
-        statusList: null
     },
-    created: function ()
-    {
-        var self = this;
-        self.loadData();
+    created: function () {
+        this.startConnection();
     },
     methods: {
-        loadData: function ()
-        {
-            this.fetchSmsList();
-            this.fetchContacts();
-            this.fetchStatusList();
+        // Inladen data
+        loadData: function () {
+            this.requestContacts();
+            this.requestStatusList();
+            this.requestSmsList(true); // arg = include Created (bool)
         },
-        fetchSmsList: function ()
-        {
-            self = this;
-            fetch(`${apiURL}Sms`)
-                .then(res => res.json())
-                .then(function (smsList)
-                {
-                    if (self.sms != null)
-                    {
-                        // Is er een actieve sms? Instellen in nieuwe lijst
-                        if (self.currentSms != null)
-                        {
-                            smsList.filter(x => x.Id === self.currentSms.Id)[0].isActive = true;
-                        }
-                    }
+        showHeader: function (){
+            this.showButtons = true;
+            this.message = 'Berichten';
+        },
 
-                    self.sms = smsList;
-                    self.message = 'Berichten';
-                    self.showButtons = true;
-                })
-                .catch(err => console.error('Fout: ' + err));
-        },
-        fetchSmsDetails: function (s)
-        {
-            self = this;
-            fetch(`${apiURL}Sms/${s.Id}`)
-                .then(res => res.json())
-                .then(function (res)
-                {
-                    self.currentSms = res;
-                    self.sms.forEach(function (s2, i)
-                    {
-                        s2.isActive = false;
-                    })
-                    s.isActive = true;
-                })
-                .catch(err => console.error('Fout: ' + err));
-        },
-        getSmsClass: function (s)
-        {
+        // Passen weergave SmsList items aan
+        getSmsClass: function (sms) {
             style = 'list-group-item'
-            if (s.isActive) style += ' active';
-            switch (s.StatusName)
-            {
+            if (sms.isActive) style += ' active';
+            switch (sms.StatusName) {
                 case "Queued":
                     style += ' list-group-item-info';
                     break
@@ -203,83 +162,56 @@ var app = new Vue({
             }
             return style;
         },
-        fetchContacts: function ()
-        {
-            self = this;
-            fetch(`${apiURL}Contacts`)
-                .then(res => res.json())
-                .then(function (res)
-                {
-                    self.contacts = res;
-                })
-                .catch(err => console.error('Fout: ' + err));
-        },
-        fetchStatusList: function () {
-            self = this;
-            fetch(`${apiURL}Status`)
-                .then(res => res.json())
-                .then(function (res) {
-                    self.statusList = res;
-                })
-                .catch(err => console.error('Fout: ' + err));
-        },
-        toEditMode: function (isEdit)
-        {
-            self = this;
-            self.editMode = true;
-        },
-        saveEdit: function ()
-        {
-            var self = this
-            // opslaan - ajax configuratie
-            var ajaxHeaders = new Headers();
-            ajaxHeaders.append("Content-Type", "application/json");
-            var ajaxConfig = {
-                body: JSON.stringify(self.currentSms),
-                headers: ajaxHeaders
-            }
-            ajaxConfig.method = 'PUT';
-            var myRequest = new Request(`${apiURL}Sms/${self.currentSms.Id}`, ajaxConfig)
-
-            fetch(myRequest)
-                .catch(err => console.error('Fout: ' + err));
-
-            self.editMode = false;
-        },
-        deleteSms: function ()
-        {
-            self = this;
-            var ajaxHeaders = new Headers();
-            ajaxHeaders.append("Content-Type", "application/json");
-            var ajaxConfig = {
-                headers: ajaxHeaders
-            }
-            ajaxConfig.method = 'DELETE';
-            var myRequest = new Request(`${apiURL}Sms/${self.currentSms.Id}`, ajaxConfig)
-
-            fetch(myRequest)
-                .catch(err => console.error('Fout: ' + err));
-
-            self.currentSms = null;
-        },
-        getShortenedMessage: function (text)
-        {
+        getShortenedMessage: function (text) {
             var desiredLength = 20;
-            if (text.length <= desiredLength)
-            {
+            if (text.length <= desiredLength) {
                 return text;
             }
-            else
-            {
+            else {
                 return text.substring(0, desiredLength) + '...'
             }
-
         },
-        closedNewSmsSelectModal: function (payload)
-        {
+        selectSms: function (sms) {
+            this.smsList.forEach(
+                function (item) {
+                    item.isActive = false;
+                })
+            sms.isActive = true;
+            this.currentSms = Object.assign({}, sms); // shallow copy ipv pointer
+            this.currentSms.ContactIsNotAnonymous = (this.currentSms.ContactFirstName != null
+                                                    || this.currentSms.ContactLastName != null);
+            this.hideEditMode();
+        },
+
+        // Edit mode
+        showEditMode: function () {
+            this.editMode = true;
+        },
+        hideEditMode: function () {
+            this.editMode = false;
+        },
+        saveEdit: function () {
+            this.requestEditSms(this.currentSms);
+            this.hideEditMode();
+        },
+        currentSmsSelectedContactChanged: function (contactId) {
+            selectedContact = this.contactList.filter(x => x.Id == contactId)[0];
+            this.currentSms.ContactFirstName = selectedContact.FirstName;
+            this.currentSms.ContactLastName = selectedContact.LastName;
+            this.currentSms.ContactNumber = selectedContact.Number;
+            this.currentSms.ContactIsNotAnonymous = true;
+        },
+        currentSmsSelectedStatusChanged: function (statusId) {
+            selectedStatus = this.statusList.filter(x => x.Id == statusId)[0];
+
+            this.currentSms.StatusName = selectedStatus.Name;
+        },
+
+
+        // Modal pages
+        closedNewSmsSelectModal: function (selectedModal) {
             this.showNewSmsSelectModal = false;
-            switch (payload)
-            {
+            switch (selectedModal) {
                 case 'showNewSmsContactModal':
                     this.showNewSmsContactModal = true;
                     break;
@@ -288,27 +220,32 @@ var app = new Vue({
                     break;
             }
         },
-        currentSmsSelectedContactChanged: function ()
-        {
-            selectedContact = this.contacts.filter(x => x.Id == this.currentSms.ContactId)[0];
-            this.currentSms.ContactFirstName = selectedContact.FirstName;
-            this.currentSms.ContactLastName = selectedContact.LastName;
-            this.currentSms.ContactNumber = selectedContact.Number;
+
+
+        // Send sms
+        sendSelected: function(){
+            this.requestSendSelected(this.currentSms.Id);
         },
-        currentSmsSelectedStatusChanged: function ()
-        {
-            // Uitzoeken: is deze function überhaupt nodig
-            selectedStatus = this.statusList.filter(x => x.Id == this.currentSms.StatusId)[0];
-            this.currentSms.StatusId = selectedStatus.Id;
-            this.currentSms.StatusName = selectedStatus.Name;
+        toggleSendPending: function () {
+            this.requestToggleSendPending();
         },
-        sendSelected: function (smsId)
-        {
-            SSEHub.server.sendSelectedSms(smsId);
+
+        // Passen inhoud smsList aan
+        addSms: function (smsDTO) {
+            this.smsList = this.smsList.push(smsDTO);
         },
-        toggleSendPending: function ()
-        {
-            SSEHub.server.toggleSendPending();
+        changeSms: function (smsDTO) {
+            smsIndex = this.smsList.findIndex(s => s.Id == smsDTO.Id);
+            this.smsList[smsIndex] = smsDTO;
+
+            if (this.currentSms.Id == smsDTO.Id) {
+                this.currentSms = smsDTO;
+                this.smsList.filter(x => x.Id === smsDTO.Id)[0].isActive = true;
+            };
+        },
+        removeSms: function (smsDTO) {
+            this.smsList = this.smsList.filter(x => x.Id != smsDTO.Id);
+            this.currentSms = null;
         },
     }
 });
