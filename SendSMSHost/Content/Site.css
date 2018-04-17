@@ -1,4 +1,8 @@
-﻿body {
+﻿html, body {
+    height: 100%;
+}
+
+body {
     padding-top: 50px;
     padding-bottom: 20px;
 }
@@ -18,4 +22,9 @@ textarea {
 
 [v-cloak] {
     display: none;
+}
+
+.list-scrollable {
+    max-height: 70vh;
+    overflow-y: auto;
 }

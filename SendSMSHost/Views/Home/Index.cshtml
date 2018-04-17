@@ -3,9 +3,9 @@
     ViewBag.Title = "IndexVue";
 }
 
-<article id="app" class="row" v-cloak>
+<article id="app" class="container-fluid" v-cloak>
     <!--Modal voor maken nieuwe sms op basis van bestaand contact-->
-    <modal-new-sms-contact v-on:close="showNewSmsContactModal = false" v-bind:show="showNewSmsContactModal" v-bind:contacts="contactList"></modal-new-sms-contact>
+    <modal-new-sms-contact v-on:close="showNewSmsContactModal = false" v-bind:show="showNewSmsContactModal" v-bind:contact-list="contactList"></modal-new-sms-contact>
 
     <!--Modal voor maken nieuwe sms op basis van nummer-->
     <modal-new-sms-number v-on:close="showNewSmsNumberModal = false" v-bind:show="showNewSmsNumberModal"></modal-new-sms-number>
@@ -14,102 +14,106 @@
     <modal-select v-on:close="closedNewSmsSelectModal"
                   v-bind:show="showNewSmsSelectModal"></modal-select>
 
-    <header class="col-md-6">
-        <h3>
-            {{ message }}
-            <span v-if="showButtons">
-                <button v-on:click="showNewSmsSelectModal = true" class="btn btn-warning">New</button>
-                <button v-on:click="loadData()" class="btn btn-warning">Refresh</button>
-            </span>
-            <span v-if="showButtons" style="float: right">
-                <button v-on:click="sendSelected(currentSms.Id)" class="btn btn-success">Send Selected</button>
-                <button v-on:click="toggleSendPending()" class="btn btn-success">Send Pending</button>
-            </span>
-        </h3>
-        <nav>
-            <ul class="list-group">
-                <li v-for="s in smsList"
-                    v-on:click="selectSms(s)" :class="getSmsClass(s)"
-                    style="cursor:pointer">
-                    <span class="list-group-item-heading">{{ s.ContactFirstName + ' ' + s.ContactLastName }}</span>
-                    <span class="list-group-item-text text-muted"> ({{ s.ContactNumber }})</span>
-                    <span class="badge">{{ s.StatusName }}</span>
-                    <div class="list-group-item-text lead">{{ getShortenedMessage(s.Message) }}</div>
-                </li>
-            </ul>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-2 h3 ">{{ message }}</div>
+            <div class="col-md-5 h3" v-if="showButtons">
+                <div class="container-fluid">
+                    <div class="row text-right">
+                        <button v-on:click="showNewSmsSelectModal = true" class="btn btn-warning col-sm">New</button>
+                        <button v-on:click="loadData()" class="btn btn-warning col-sm">Refresh</button>
+                        <button v-on:click="sendSelected(currentSms.Id)" class="btn btn-success col-sm">Send Selected</button>
+                        <button v-on:click="toggleSendPending()" class="btn btn-success col-sm">Send Pending</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <nav class="row">
+            <div class="col-lg-7">
+                <ul class="list-group list-scrollable">
+                    <li v-for="s in smsList"
+                        v-on:click="selectSms(s)" :class="getSmsClass(s)"
+                        style="cursor:pointer">
+                        <span class="list-group-item-heading">{{ s.ContactFirstName + ' ' + s.ContactLastName }}</span>
+                        <span class="list-group-item-text text-muted"> ({{ s.ContactNumber }})</span>
+                        <span class="badge">{{ s.StatusName }}</span>
+                        <div class="list-group-item-text lead">{{ getShortenedMessage(s.Message) }}</div>
+                    </li>
+                </ul>
+            </div>
+            <article v-if="currentSms" class="col-md-4">
+                <h3>Details</h3>
+                <div v-if="editMode" class="form-group">
+                    <table>
+                        <tr>
+                            <td>Contact:</td>
+                            <td>
+                                <select v-model="currentSms.ContactId" class="form-control"
+                                        v-on:change="currentSmsSelectedContactChanged(currentSms.ContactId)">
+                                    <option v-for="contact in contactList"
+                                            v-bind:value="contact.Id">
+                                        {{ contact.FirstName + ' ' + contact.LastName }}
+                                    </option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr v-show="currentSms.ContactIsNotAnonymous">
+                            <td>First Name:</td>
+                            <td><input v-model="currentSms.ContactFirstName" class="form-control"></td>
+                        </tr>
+                        <tr v-show="currentSms.ContactIsNotAnonymous">
+                            <td>Last Name:</td>
+                            <td><input v-model="currentSms.ContactLastName" class="form-control"></td>
+                        </tr>
+                        <tr>
+                            <td>Nummer:</td>
+                            <td><input v-model="currentSms.ContactNumber" class="form-control"></td>
+                        </tr>
+                        <tr>
+                            <td>Bericht:</td>
+                            <td><textarea v-model="currentSms.Message" class="form-control"> </textarea></td>
+                        </tr>
+                        <tr>
+                            <td>Status:</td>
+                            <td>
+                                <select v-model="currentSms.StatusId" class="form-control"
+                                        v-on:change="currentSmsSelectedStatusChanged(currentSms.StatusId)">
+                                    <option v-for="status in statusList"
+                                            v-bind:value="status.Id">
+                                        {{ status.Name }}
+                                    </option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                    <button v-on:click="saveEdit()" class="btn btn-primary">Save</button>
+                    <button v-on:click="hideEditMode()" class="btn btn-primary">Cancel</button>
+                </div>
+                <div v-else>
+                    <table>
+                        <tr v-if="currentSms.ContactIsNotAnonymous">
+                            <td>Contact:</td>
+                            <td class="smsContactName">{{  currentSms.ContactFirstName + ' ' + currentSms.ContactLastName}}</td>
+                        </tr>
+                        <tr>
+                            <td>Nummer:</td>
+                            <td class="sms">{{ currentSms.ContactNumber}}</td>
+                        </tr>
+                        <tr>
+                            <td>Bericht:</td>
+                            <td>{{ currentSms.Message}}</td>
+                        </tr>
+                        <tr>
+                            <td>Status:</td>
+                            <td>{{ currentSms.StatusName}}</td>
+                        </tr>
+                    </table>
+                    <button v-on:click="showEditMode()" class="btn btn-primary">Edit</button>
+                    <button v-on:click="requestDeleteSms(currentSms)" class="btn btn-danger">Delete</button>
+                </div>
+            </article>
         </nav>
-    </header>
-    <article v-if="currentSms" class="col-md-4">
-        <h3>Details</h3>
-        <div v-if="editMode" class="form-group">
-            <table>
-                <tr>
-                    <td>Contact:</td>
-                    <td>
-                        <select v-model="currentSms.ContactId" class="form-control"
-                                v-on:change="currentSmsSelectedContactChanged(currentSms.ContactId)">
-                            <option v-for="contact in contactList"
-                                    v-bind:value="contact.Id">
-                                {{ contact.FirstName + ' ' + contact.LastName }}
-                            </option>
-                        </select>
-                    </td>
-                </tr>
-                <tr v-if="currentSms.ContactIsNotAnonymous">
-                    <td>Contact First Name:</td>
-                    <td><input v-model="currentSms.ContactFirstName" class="form-control"></td>
-                </tr>
-                <tr v-if="currentSms.ContactIsNotAnonymous">
-                    <td>Contact Last Name:</td>
-                    <td><input v-model="currentSms.ContactLastName" class="form-control"></td>
-                </tr>
-                <tr>
-                    <td>Nummer:</td>
-                    <td><input v-model="currentSms.ContactNumber" class="form-control"></td>
-                </tr>
-                <tr>
-                    <td>Bericht:</td>
-                    <td><textarea v-model="currentSms.Message" class="form-control"> </textarea></td>
-                </tr>
-                <tr>
-                    <td>Status:</td>
-                    <td>
-                        <select v-model="currentSms.StatusId" class="form-control"
-                                v-on:change="currentSmsSelectedStatusChanged(currentSms.StatusId)">
-                            <option v-for="status in statusList"
-                                    v-bind:value="status.Id">
-                                {{ status.Name }}
-                            </option>
-                        </select>
-                    </td>
-                </tr>
-            </table>
-            <button v-on:click="saveEdit()" class="btn btn-primary">Save</button>
-            <button v-on:click="hideEditMode()" class="btn btn-primary">Cancel</button>
-        </div>
-        <div v-else>
-            <table>
-                <tr v-if="currentSms.ContactIsNotAnonymous">
-                    <td>Contact:</td>
-                    <td class="smsContactName">{{  currentSms.ContactFirstName + ' ' + currentSms.ContactLastName}}</td>
-                </tr>
-                <tr>
-                    <td>Nummer:</td>
-                    <td class="sms">{{ currentSms.ContactNumber}}</td>
-                </tr>
-                <tr>
-                    <td>Bericht:</td>
-                    <td>{{ currentSms.Message}}</td>
-                </tr>
-                <tr>
-                    <td>Status:</td>
-                    <td>{{ currentSms.StatusName}}</td>
-                </tr>
-            </table>
-            <button v-on:click="showEditMode()" class="btn btn-primary">Edit</button>
-            <button v-on:click="requestDeleteSms(currentSms)" class="btn btn-danger">Delete</button>
-        </div>
-    </article>
+    </div>
 </article>
 
 @section scripts{
@@ -246,7 +250,6 @@
     </script>
 
     <!--The jQuery library is required and is referenced by default in _Layout.cshtml. -->
-    
     <!--Reference the SignalR library. -->
     <script src="~/Scripts/jquery.signalR-2.2.3.min.js"></script>
     <!--Reference the autogenerated SignalR hub script. -->

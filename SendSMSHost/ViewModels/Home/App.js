@@ -9,7 +9,7 @@ Vue.component('modal-select', {
 // modal-template-new-sms-contact
 Vue.component('modal-new-sms-contact', {
     template: '#modal-template-new-sms-contact',
-    props: ['show', 'contactList'],
+    props: ['show', 'contact-list'],
     data: function () {
         return {
             newSms: {
@@ -27,31 +27,17 @@ Vue.component('modal-new-sms-contact', {
     },
     methods: {
         save: function () {
-            var self = this
-            // opslaan - ajax configuratie
-            var ajaxHeaders = new Headers();
-            ajaxHeaders.append("Content-Type", "application/json");
-            var ajaxConfig = {
-                body: JSON.stringify(self.newSms),
-                headers: ajaxHeaders
-            }
+            app.requestCreateSms(this.newSms)
 
-            ajaxConfig.method = 'POST';
-            var myRequest = new Request(self.apiUrl + 'Sms/', ajaxConfig)
-
-            fetch(myRequest)
-                .then(function () {
-                    // newSms resetten
-                    self.newSms = new Object();
-                    self.newSms.Id = null;
-                    self.newSms.ContactId = null;
-                    self.newSms.ContactFirstName = null;
-                    self.newSms.ContactLastName = null;
-                    self.newSms.ContactNumber = null;
-                    self.newSms.Message = null;
-                    self.newSms.TimeStamp = null;
-                })
-                .catch(err => console.error('Fout: ' + err));
+            // newSms resetten
+            this.newSms = new Object();
+            this.newSms.Id = null;
+            this.newSms.ContactId = null;
+            this.newSms.ContactFirstName = null;
+            this.newSms.ContactLastName = null;
+            this.newSms.ContactNumber = null;
+            this.newSms.Message = null;
+            this.newSms.TimeStamp = null;
 
             this.$emit('close');
         }
@@ -66,7 +52,7 @@ Vue.component('modal-new-sms-number', {
         return {
             newSms: {
                 Id: null,
-                ContactId: null,
+                ContactId: null, 
                 ContactFirstName: null,
                 ContactLastName: null,
                 ContactNumber: null,
@@ -79,32 +65,17 @@ Vue.component('modal-new-sms-number', {
     },
     methods: {
         save: function () {
-            var self = this
+            app.requestCreateSms(this.newSms)
 
-            // opslaan - ajax configuratie
-            var ajaxHeaders = new Headers();
-            ajaxHeaders.append("Content-Type", "application/json");
-            var ajaxConfig = {
-                body: JSON.stringify(self.newSms),
-                headers: ajaxHeaders
-            }
-
-            ajaxConfig.method = 'POST';
-            var myRequest = new Request(self.apiUrl + 'Sms/', ajaxConfig)
-
-            fetch(myRequest)
-                .then(function () {
-                    // newSms resetten
-                    self.newSms = new Object();
-                    self.newSms.Id = null;
-                    self.newSms.ContactId = null;
-                    self.newSms.ContactFirstName = null;
-                    self.newSms.ContactLastName = null;
-                    self.newSms.ContactNumber = null;
-                    self.newSms.Message = null;
-                    self.newSms.TimeStamp = null;
-                })
-                .catch(err => console.error('Fout: ' + err));;
+            // newSms resetten
+            this.newSms = new Object(); 
+            this.newSms.Id = null;
+            this.newSms.ContactId = null;
+            this.newSms.ContactFirstName = null;
+            this.newSms.ContactLastName = null;
+            this.newSms.ContactNumber = null;
+            this.newSms.Message = null;
+            this.newSms.TimeStamp = null;
 
             this.$emit('close');
         }
@@ -137,7 +108,7 @@ var app = new Vue({
             this.requestStatusList();
             this.requestSmsList(true); // arg = include Created (bool)
         },
-        showHeader: function (){
+        showHeader: function () {
             this.showButtons = true;
             this.message = 'Berichten';
         },
@@ -199,7 +170,7 @@ var app = new Vue({
             this.currentSms.ContactFirstName = selectedContact.FirstName;
             this.currentSms.ContactLastName = selectedContact.LastName;
             this.currentSms.ContactNumber = selectedContact.Number;
-            this.currentSms.ContactIsNotAnonymous = true;
+            this.currentSms.ContactIsNotAnonymous = !selectedContact.IsAnonymous;
         },
         currentSmsSelectedStatusChanged: function (statusId) {
             selectedStatus = this.statusList.filter(x => x.Id == statusId)[0];
@@ -223,7 +194,7 @@ var app = new Vue({
 
 
         // Send sms
-        sendSelected: function(){
+        sendSelected: function () {
             this.requestSendSelected(this.currentSms.Id);
         },
         toggleSendPending: function () {
