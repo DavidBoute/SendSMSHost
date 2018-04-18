@@ -66,8 +66,6 @@ namespace SendSMSHost
                             // De lijst van sms'en met de status Queued of Pending aanvullen tot batchSize
                             // aanpassen in database + clients verwittigen
 
-                            Debug.WriteLine($"[{DateTime.Now}] Checking sms to queue");
-
                             Status statusQueued = db.Status.FirstOrDefault(x => x.Name == "Queued");
                             Status statusPending = db.Status.FirstOrDefault(x => x.Name == "Pending");
                             Status statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
@@ -164,7 +162,6 @@ namespace SendSMSHost
                             return;
 
                         IsBusyImporting = true;
-                        Debug.WriteLine($"[{DateTime.Now}] Checking sms to import");
 
                         // nieuwe context opvragen
                         using (var db = new SendSMSHostContext())

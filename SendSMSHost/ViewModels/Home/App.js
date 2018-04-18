@@ -203,7 +203,7 @@ var app = new Vue({
 
         // Passen inhoud smsList aan
         addSms: function (smsDTO) {
-            this.smsList = this.smsList.push(smsDTO);
+            this.smsList.push(smsDTO);
         },
         changeSms: function (smsDTO) {
             smsIndex = this.smsList.findIndex(s => s.Id == smsDTO.Id);

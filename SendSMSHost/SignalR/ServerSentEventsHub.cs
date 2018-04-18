@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 using SendSMSHost.Models;
+using SendSMSHost.Models.Factory;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -17,9 +18,9 @@ namespace SendSMSHost.SignalR
     {
         private SendSMSHostContext db;
 
-        #region Request methods 
+        #region Request methods // Clients vragen data aan
 
-        // Clients vragen gegevens in db op
+        #region Sms
 
         /// <summary>
         /// Stuur een boodschap naar alle clients, om als popup te tonen
@@ -87,8 +88,9 @@ namespace SendSMSHost.SignalR
             Clients.Caller.getContactList(contactDTOList);
         }
 
+        #endregion      
 
-        // Clients vragen wijzigingen in db aan
+        #region Wijzigingen
 
         /// <summary>
         /// Maakt een Sms in de database.
@@ -96,21 +98,60 @@ namespace SendSMSHost.SignalR
         /// <param name="smsDTO">de te maken sms</param>
         public async Task RequestCreateSms(SmsDTO smsDTO)
         {
-            Sms sms = await db.Sms.FindAsync(Guid.Parse(smsDTO.Id));
-            if (sms == null)
+            // Indien ContactId == null dan opzoeken of nieuw contact voorzien
+            if (String.IsNullOrWhiteSpace(smsDTO.ContactId))
             {
-                db.Sms.Add(sms);
-                try
+                // kijken of nummer al in gebruik is
+                Contact contact = db.Contacts
+                                    .SingleOrDefault(x => x.Number == smsDTO.ContactNumber);
+                if (contact == null) // nieuw contact maken
                 {
-                    await db.SaveChangesAsync();
+                    contact = new Contact
+                    {
+                        Id = Guid.NewGuid(),
+                        FirstName = smsDTO.ContactNumber,
+                        LastName = "",
+                        Number = smsDTO.ContactNumber,
+                        IsAnonymous = true
+                    };
 
-                    UpdateLog(db, smsDTO, "DELETE");
-                    NotifyCreateSms(smsDTO, Clients);
+                    db.Contacts.Add(contact);
+                    try
+                    {
+                        await db.SaveChangesAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex.Message);
+                        throw;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
-                }
+                smsDTO.ContactId = contact.Id.ToString();
+                smsDTO.ContactFirstName = contact.FirstName;
+                smsDTO.ContactLastName = contact.LastName;
+            }
+
+            Sms sms = Mapper.Map<Sms>(smsDTO);
+
+            sms.Id = Guid.NewGuid();
+            sms.TimeStamp = DateTime.Now;
+            sms.Status = await db.Status
+                                .SingleOrDefaultAsync(x => x.Name == "Created");
+            db.Sms.Add(sms);
+
+            try
+            {
+                await db.SaveChangesAsync();
+
+                smsDTO = await db.Sms.ProjectTo<SmsDTO>()
+                    .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString());
+
+                UpdateLog(db, smsDTO, "POST");
+                NotifyCreateSms(smsDTO, Clients);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
             }
         }
 
@@ -160,6 +201,56 @@ namespace SendSMSHost.SignalR
                 }
             }
         }
+
+        #endregion
+
+        #region ChartData
+
+        /// <summary>
+        /// Stuurt een ForeverChartData naar de caller
+        /// </summary>
+        public void RequestForeverChart(bool includeDeleted = false)
+        {
+            IChartDataFactory chartDataFactory = new ForeverChartDataFactory();
+            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
+
+            Clients.Caller.notifyChangeForeverChart(chartdata);
+        }
+
+        /// <summary>
+        /// Stuurt een WeekChartData naar de caller
+        /// </summary>
+        public void RequestWeekChart(bool includeDeleted = false)
+        {
+            IChartDataFactory chartDataFactory = new WeekChartDataFactory();
+            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
+
+            Clients.Caller.notifyChangeWeekChart(chartdata);
+        }
+
+        /// <summary>
+        /// Stuurt een DayChartData naar de caller
+        /// </summary>
+        public void RequestDayChart(bool includeDeleted = false)
+        {
+            IChartDataFactory chartDataFactory = new DayChartDataFactory();
+            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
+
+            Clients.Caller.notifyChangeDayChart(chartdata);
+        }
+
+        /// <summary>
+        /// Stuurt een HourChartData naar de caller
+        /// </summary>
+        public void RequestHourChart(bool includeDeleted = false)
+        {
+            IChartDataFactory chartDataFactory = new HourChartDataFactory();
+            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
+
+            Clients.Caller.notifyChangeHourChart(chartdata);
+        }
+
+        #endregion
 
         #endregion
 

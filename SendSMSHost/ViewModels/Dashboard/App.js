@@ -13,10 +13,14 @@ Vue.component('bar-chart', {
 
 var app = new Vue({
     el: '#app',
+    mixins: [connectionMethods],
     data: {
         message: 'Loading...',
-        summaryList: null,
+        includeDeleted: false,
+        foreverGraph_data: null,
         weekGraph_data: null,
+        dayGraph_data: null,
+        hourGraph_data: null,
         weekGraph_options: {
             scales: {
                 yAxes: [{
@@ -44,28 +48,24 @@ var app = new Vue({
         }
     },
     created: function () {
-        var self = this;
-        self.loadData();
+        this.startConnection();
     },
     methods: {
         loadData: function () {
-            var self = this;
-            self.fetchWeekChartData();
-            self.message = 'Dashboard';
+            this.getChartData(this.includeDeleted);
+            this.message = 'Dashboard';
         },
-        fetchChartData: function () {
-            self = this;
-            self.fetchWeekChartData()
-
+        getChartData: function (includeDeleted) {
+            this.requestForeverChartData(includeDeleted);
+            this.requestWeekChartData(includeDeleted);
+            this.requestDayChartData(includeDeleted);
+            this.requestHourChartData(includeDeleted);
         },
-        fetchWeekChartData: function () {
-            self = this;
-            fetch(`${apiURL}Chartdata/week`)
-                .then(res => res.json())
-                .then(function (data) {
-                    self.weekGraph_data = data;
-                })
-                .catch(err => console.error('Fout: ' + err));
-        },
+        
+    },
+    watch: {
+        includeDeleted: function (newVal, oldVal) { 
+            this.getChartData(newVal);
+        }
     }
 });
