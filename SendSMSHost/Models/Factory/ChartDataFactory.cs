@@ -11,6 +11,7 @@ namespace SendSMSHost.Models.Factory
     public interface IChartDataFactory
     {
         ChartData CreateChartData(ISendSMSHostContext db);
+        ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted);
     }
 
     public class ChartData
@@ -42,11 +43,18 @@ namespace SendSMSHost.Models.Factory
 
     public class ForeverChartDataFactory : IChartDataFactory
     {
-        public ChartData CreateChartData(ISendSMSHostContext db)
+        public ChartData CreateChartData(ISendSMSHostContext db) { return CreateChartData(db, false); }
+
+        public ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted)
         {
             var lastLogs = db.Log
                             .GroupBy(x => x.SmsId)
                             .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
+
+            if (!includeDeleted)
+            {
+                lastLogs = lastLogs.Where(z => z.Operation != "DELETE");
+            };
 
             var data = db.Status
                             .Select(s => new
@@ -78,7 +86,9 @@ namespace SendSMSHost.Models.Factory
 
     public class WeekChartDataFactory : IChartDataFactory
     {
-        public ChartData CreateChartData(ISendSMSHostContext db)
+        public ChartData CreateChartData(ISendSMSHostContext db) { return CreateChartData(db, false); }
+
+        public ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted)
         {
             List<DateTime> dateList = new List<DateTime>();
             for (int i = 6; i >= 0; i--)
@@ -87,9 +97,14 @@ namespace SendSMSHost.Models.Factory
             }
 
             var lastLogs = db.Log
-                            .Where(x=> x.Timestamp >= dateList.Min())
+                            .Where(x => x.Timestamp >= dateList.Min())
                             .GroupBy(x => x.SmsId)
                             .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
+
+            if (!includeDeleted)
+            {
+                lastLogs = lastLogs.Where(z => z.Operation != "DELETE");
+            };
 
             var data = db.Status
                             .Select(s => new
@@ -127,18 +142,25 @@ namespace SendSMSHost.Models.Factory
     {
         const int INTERVAL_HOURS = 1;
 
-        public ChartData CreateChartData(ISendSMSHostContext db)
+        public ChartData CreateChartData(ISendSMSHostContext db) { return CreateChartData(db, false); }
+
+        public ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted)
         {
             List<DateTime> hourList = new List<DateTime>();
             for (int i = 0; i < (24 / INTERVAL_HOURS); i++)
             {
-                hourList.Add(DateTime.Today.AddHours(i* INTERVAL_HOURS));
+                hourList.Add(DateTime.Today.AddHours(i * INTERVAL_HOURS));
             }
 
             var lastLogs = db.Log
                             .Where(x => x.Timestamp >= hourList.Min())
                             .GroupBy(x => x.SmsId)
                             .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
+
+            if (!includeDeleted)
+            {
+                lastLogs = lastLogs.Where(z => z.Operation != "DELETE");
+            };
 
             var data = db.Status
                             .Select(s => new
@@ -164,7 +186,7 @@ namespace SendSMSHost.Models.Factory
 
             ChartData chartData = new ChartData
             {
-                Labels = hourList.Select(d => d.ToString("hh:mm")).ToArray(),
+                Labels = hourList.Select(d => d.ToString("HH:mm")).ToArray(),
                 Datasets = data
             };
 
@@ -176,7 +198,9 @@ namespace SendSMSHost.Models.Factory
     {
         const int INTERVAL_MINUTES = 5;
 
-        public ChartData CreateChartData(ISendSMSHostContext db)
+        public ChartData CreateChartData(ISendSMSHostContext db) { return CreateChartData(db, false); }
+
+        public ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted)
         {
             List<DateTime> minuteList = new List<DateTime>();
             DateTime dateHour = DateTime.Today.AddHours(DateTime.Now.Hour);
@@ -190,6 +214,11 @@ namespace SendSMSHost.Models.Factory
                             .Where(x => x.Timestamp >= minuteList.Min())
                             .GroupBy(x => x.SmsId)
                             .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
+
+            if (!includeDeleted)
+            {
+                lastLogs = lastLogs.Where(z => z.Operation != "DELETE");
+            };
 
             var data = db.Status
                             .Select(s => new
@@ -215,7 +244,7 @@ namespace SendSMSHost.Models.Factory
 
             ChartData chartData = new ChartData
             {
-                Labels = minuteList.Select(d => d.ToString("hh:mm")).ToArray(),
+                Labels = minuteList.Select(d => d.ToString("HH:mm")).ToArray(),
                 Datasets = data
             };
 

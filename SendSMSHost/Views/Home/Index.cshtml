@@ -57,14 +57,6 @@
                                 </select>
                             </td>
                         </tr>
-                        <tr v-show="currentSms.ContactIsNotAnonymous">
-                            <td>First Name:</td>
-                            <td><input v-model="currentSms.ContactFirstName" class="form-control"></td>
-                        </tr>
-                        <tr v-show="currentSms.ContactIsNotAnonymous">
-                            <td>Last Name:</td>
-                            <td><input v-model="currentSms.ContactLastName" class="form-control"></td>
-                        </tr>
                         <tr>
                             <td>Nummer:</td>
                             <td><input v-model="currentSms.ContactNumber" class="form-control"></td>
@@ -225,7 +217,7 @@
                                     <table>
                                         <tr>
                                             <td>Nummer:</td>
-                                            <td><input v-model="newSms.ContactNumber" class="form-control"></input></td>
+                                            <td><input v-model="newSms.ContactNumber" class="form-control"></td>
                                         </tr>
                                         <tr>
                                             <td>Bericht:</td>

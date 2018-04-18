@@ -22,10 +22,10 @@ namespace SendSMSHost.Controllers
         [HttpGet]
         [ActionName("Forever")]
         [ResponseType(typeof(ChartData))]
-        public IHttpActionResult GetForeverChartData()
+        public IHttpActionResult GetForeverChartData(bool includeDeleted = false)
         {
             IChartDataFactory chartDataFactory = new ForeverChartDataFactory();
-            ChartData chartdata = chartDataFactory?.CreateChartData(db);
+            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
 
             return Ok(chartdata);
         }
@@ -34,10 +34,10 @@ namespace SendSMSHost.Controllers
         [HttpGet]
         [ActionName("Week")]
         [ResponseType(typeof(ChartData))]
-        public IHttpActionResult GetWeekChartData()
+        public IHttpActionResult GetWeekChartData(bool includeDeleted = false)
         {
             IChartDataFactory chartDataFactory = new WeekChartDataFactory();
-            ChartData chartdata = chartDataFactory?.CreateChartData(db);
+            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
 
             return Ok(chartdata);
         }
@@ -46,10 +46,10 @@ namespace SendSMSHost.Controllers
         [HttpGet]
         [ActionName("Day")]
         [ResponseType(typeof(ChartData))]
-        public IHttpActionResult GetDayChartData()
+        public IHttpActionResult GetDayChartData(bool includeDeleted = false)
         {
             IChartDataFactory chartDataFactory = new DayChartDataFactory();
-            ChartData chartdata = chartDataFactory?.CreateChartData(db);
+            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
 
             return Ok(chartdata);
         }
@@ -58,10 +58,10 @@ namespace SendSMSHost.Controllers
         [HttpGet]
         [ActionName("Hour")]
         [ResponseType(typeof(ChartData))]
-        public IHttpActionResult GetHourChartData()
+        public IHttpActionResult GetHourChartData(bool includeDeleted = false)
         {
             IChartDataFactory chartDataFactory = new HourChartDataFactory();
-            ChartData chartdata = chartDataFactory?.CreateChartData(db);
+            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
 
             return Ok(chartdata);
         }
