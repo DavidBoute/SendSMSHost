@@ -23,7 +23,8 @@
                         <button v-on:click="showNewSmsSelectModal = true" class="btn btn-warning col-sm">New</button>
                         <button v-on:click="loadData()" class="btn btn-warning col-sm">Refresh</button>
                         <button v-on:click="sendSelected(currentSms.Id)" class="btn btn-success col-sm">Send Selected</button>
-                        <button v-on:click="toggleSendPending()" class="btn btn-success col-sm">Send Pending</button>
+                        <button v-on:click="toggleSendPending(!sendStatus)" class="btn btn-success col-sm" v-if="!sendStatus">Start sending</button>
+                        <button v-on:click="toggleSendPending(!sendStatus)" class="btn btn-danger col-sm" v-if="sendStatus">Stop sending</button>
                     </div>
                 </div>
             </div>

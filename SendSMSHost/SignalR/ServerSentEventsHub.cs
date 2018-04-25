@@ -88,6 +88,14 @@ namespace SendSMSHost.SignalR
             Clients.Caller.getContactList(contactDTOList);
         }
 
+        /// <summary>
+        /// Stuurt een de actuele status van het sturen van berichten naar de caller
+        /// </summary>
+        public void RequestSendStatus()
+        {
+            Clients.Others.getSendStatus();
+        }
+
         #endregion      
 
         #region Wijzigingen
@@ -305,6 +313,15 @@ namespace SendSMSHost.SignalR
             UpdateLog(db, smsDTOWithOperation);
         }
 
+        /// <summary>
+        /// Brengt andere clients op de hoogte dat een toggle om berichten te sturen aangepast is
+        /// </summary>
+        /// <param name="sendStatus">de actuele status</param>
+        public void NotifySendStatus(bool sendStatus)
+        {
+            Clients.Others.notifySendStatus(sendStatus);
+        }
+
         #endregion
 
         #endregion
@@ -318,7 +335,7 @@ namespace SendSMSHost.SignalR
         public async Task SendSelectedSms(Guid smsId)
         {
             var smsDTO = await db.Sms.ProjectTo<SmsDTO>()
-                .SingleOrDefaultAsync(x => x.Id == smsId.ToString());
+                                    .SingleOrDefaultAsync(x => x.Id == smsId.ToString());
             Clients.Others.sendSelectedSms(smsDTO);
         }
 
@@ -327,9 +344,9 @@ namespace SendSMSHost.SignalR
         /// <summary>
         /// Start het automatisch zenden van Pending sms'en
         /// </summary>
-        public void toggleSendPending()
+        public void toggleSendPending(bool startSend)
         {
-            Clients.Others.toggleSendPending(true);
+            Clients.Others.toggleSendPending(startSend);
         }
 
         #endregion

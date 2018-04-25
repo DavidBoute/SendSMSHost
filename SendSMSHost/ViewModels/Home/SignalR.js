@@ -36,8 +36,11 @@ var connectionMethods = {
         requestSendSelected: function (smsId) {
             SSEHub.server.sendSelectedSms(smsId);
         },
-        requestToggleSendPending: function () {
-            SSEHub.server.toggleSendPending();
+        requestToggleSendPending: function (startSend) {
+            SSEHub.server.toggleSendPending(startSend);
+        },
+        requestSendStatus: function () {
+            SSEHub.server.requestSendStatus();
         },
     }
 };
@@ -63,6 +66,11 @@ $(function () {
     // Bij algemene melding wijziging
     SSEHub.client.notifyChangeToSmsList = function () {
         app.requestSmsList(this);
+    };
+
+    // Bij ontvangen nieuwe SendStatus
+    SSEHub.client.notifySendStatus = function (isSending) {
+        app.sendStatus = isSending;
     };
 
     // Bij maken sms

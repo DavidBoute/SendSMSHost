@@ -97,6 +97,7 @@ var app = new Vue({
         showNewSmsContactModal: false,
         showNewSmsNumberModal: false,
         newSms: null,
+        sendStatus: null
     },
     created: function () {
         this.startConnection();
@@ -107,6 +108,7 @@ var app = new Vue({
             this.requestContacts();
             this.requestStatusList();
             this.requestSmsList(true); // arg = include Created (bool)
+            this.requestSendStatus();
         },
         showHeader: function () {
             this.showButtons = true;
@@ -197,8 +199,8 @@ var app = new Vue({
         sendSelected: function () {
             this.requestSendSelected(this.currentSms.Id);
         },
-        toggleSendPending: function () {
-            this.requestToggleSendPending();
+        toggleSendPending: function (startSend) {
+            this.requestToggleSendPending(startSend);
         },
 
         // Passen inhoud smsList aan
@@ -209,7 +211,8 @@ var app = new Vue({
             smsIndex = this.smsList.findIndex(s => s.Id == smsDTO.Id);
             this.smsList[smsIndex] = smsDTO;
 
-            if (this.currentSms.Id == smsDTO.Id) {
+            if (this.currentSms != null
+                && this.currentSms.Id == smsDTO.Id) {
                 this.currentSms = smsDTO;
                 this.smsList.filter(x => x.Id === smsDTO.Id)[0].isActive = true;
             };
