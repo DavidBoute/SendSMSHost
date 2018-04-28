@@ -28,3 +28,14 @@ textarea {
     max-height: 70vh;
     overflow-y: auto;
 }
+
+.table-header-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+}
+
+.alert-light {
+    border-color: #d6d8db;
+}

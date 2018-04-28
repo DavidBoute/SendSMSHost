@@ -14,6 +14,9 @@
     <modal-select v-on:close="closedNewSmsSelectModal"
                   v-bind:show="showNewSmsSelectModal"></modal-select>
 
+    @*<cust-file-input :label="'Browse...'" :value="fileToImportName" v-on:input="onFileInput"></cust-file-input>*@
+    <cust-file-input></cust-file-input>
+
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-2 h3 ">{{ message }}</div>
@@ -111,136 +114,7 @@
 
 @section scripts{
     <script src="~/Scripts/vue.js"></script>
-
-    <!-- templates for the modal components -->
-    <!-- modal-template-select -->
-    <script type="text/x-template" id="modal-template-select">
-        <transition name="modal">
-            <div class="modal-mask" v-show="show">
-                <div class="modal-wrapper">
-                    <div class="modal-container">
-
-                        <div class="modal-header">
-                            <slot name="header">
-                                Maak een nieuwe sms op basis van:
-                            </slot>
-                        </div>
-
-                        <div class="modal-body">
-                            <slot name="body">
-                                <div class="form-group">
-                                    <table>
-                                        <tr>
-                                            <td><button class="btn btn-primary btn-block" v-on:click="$emit('close','showNewSmsContactModal')">Contact</button></td>
-                                        </tr>
-                                        <tr>
-                                            <td><button class="btn btn-primary btn-block" v-on:click="$emit('close','showNewSmsNumberModal')">Nummer</button></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </slot>
-                        </div>
-
-                        <div class="modal-footer">
-                            <slot name="footer">
-                                <button class="btn btn-primary" v-on:click="$emit('close','cancel')">Cancel</button>
-                            </slot>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </transition>
-    </script>
-
-    <!-- modal-template-new-sms-contact -->
-    <script type="text/x-template" id="modal-template-new-sms-contact">
-        <transition name="modal">
-            <div class="modal-mask" v-show="show">
-                <div class="modal-wrapper">
-                    <div class="modal-container">
-
-                        <div class="modal-header">
-                            <slot name="header">
-                                Nieuw bericht
-                            </slot>
-                        </div>
-
-                        <div class="modal-body">
-                            <slot name="body">
-                                <div class="form-group">
-                                    <table>
-                                        <tr>
-                                            <td>Contact:</td>
-                                            <td>
-                                                <select v-model="newSms.ContactId" class="form-control">
-                                                    <option v-for="contact in contactList" v-bind:value="contact.Id">{{ contact.FirstName +' '+ contact.LastName }}</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Bericht:</td>
-                                            <td><textarea v-model="newSms.Message" class="form-control"></textarea></td>
-                                        </tr>
-                                    </table>
-
-                                </div>
-                            </slot>
-                        </div>
-
-                        <div class="modal-footer">
-                            <slot name="footer">
-                                <button class="btn btn-primary" v-on:click="$emit('close')">Cancel</button>
-                                <button v-on:click="save" class="btn btn-primary">Save</button>
-                            </slot>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </transition>
-    </script>
-
-    <!-- modal-template-new-sms-number -->
-    <script type="text/x-template" id="modal-template-new-sms-number">
-        <transition name="modal">
-            <div class="modal-mask" v-show="show">
-                <div class="modal-wrapper">
-                    <div class="modal-container">
-
-                        <div class="modal-header">
-                            <slot name="header">
-                                Nieuw bericht
-                            </slot>
-                        </div>
-
-                        <div class="modal-body">
-                            <slot name="body">
-                                <div class="form-group">
-                                    <table>
-                                        <tr>
-                                            <td>Nummer:</td>
-                                            <td><input v-model="newSms.ContactNumber" class="form-control"></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Bericht:</td>
-                                            <td><textarea v-model="newSms.Message" class="form-control"></textarea></td>
-                                        </tr>
-                                    </table>
-
-                                </div>
-                            </slot>
-                        </div>
-
-                        <div class="modal-footer">
-                            <slot name="footer">
-                                <button class="btn btn-primary" v-on:click="$emit('close')">Cancel</button>
-                                <button v-on:click="save" class="btn btn-primary">Save</button>
-                            </slot>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </transition>
-    </script>
+    <script src="~/Scripts/xlsx.full.min.js"></script>
 
     <!--The jQuery library is required and is referenced by default in _Layout.cshtml. -->
     <!--Reference the SignalR library. -->
@@ -250,8 +124,8 @@
     <!--Script with page-specific SignalR methods.-->
     <script src="~/ViewModels/Home/SignalR.js"></script>
 
-    <!--Script with page-specific Ajax methods.-->
-    @*<script src="~/ViewModels/Home/Ajax.js"></script>*@
+    @*<!--Script with page-specific Ajax methods.-->
+        <script src="~/ViewModels/Home/Ajax.js"></script>*@
 
     <!--Reference to page-specific Vue code -->
     <script src="~/ViewModels/Home/App.js"></script>

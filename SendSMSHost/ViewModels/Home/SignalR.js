@@ -41,7 +41,7 @@ var connectionMethods = {
         },
         requestSendStatus: function () {
             SSEHub.server.requestSendStatus();
-        },
+        }
     }
 };
 
