@@ -7,6 +7,7 @@ var connectionMethods = {
         startConnection: function () {
             var self = this;
             SSEHub = $.connection.serverSentEventsHub;
+            $.connection.hub.logging = true;
             $.connection.hub.start().done(function () { self.loadData(); });
         },
 
@@ -30,6 +31,17 @@ var connectionMethods = {
         },
         requestDeleteSms: function (smsDTO) {
             SSEHub.server.requestDeleteSms(smsDTO);
+        },
+        requestCreateSmsBulk: function (smsDTOList) {
+            // 400 is te veel, 250 voor de veiligheid 
+            // max size 64k
+            // recommended max size 32k
+
+            var step = 250;
+            for (var i = 0; i <= smsDTOList.length; i += step) {
+                SSEHub.server.requestCreateSmsBulk(smsDTOList.slice(i, i + step));
+            }
+             
         },
 
         // Vragen versturen van berichten aan

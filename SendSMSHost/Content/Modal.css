@@ -16,7 +16,6 @@
 }
 
 .modal-container {
-    width: 500px;
     margin: 0px auto;
     padding: 20px 30px;
     background-color: #fff;
@@ -33,6 +32,7 @@
 
 .modal-body {
     margin: 20px 0;
+    height: 100%;
 }
 
 .modal-default-button {

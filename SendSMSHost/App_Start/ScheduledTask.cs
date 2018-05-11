@@ -166,7 +166,7 @@ namespace SendSMSHost
                         // nieuwe context opvragen
                         using (var db = new SendSMSHostContext())
                         {
-                            // kijken als er reccords in de tabel ImportSms zijn
+                            // kijken als er records in de tabel ImportSms zijn
                             // en toevoegen aan genormaliseerde tabellen.
 
                             int importSmsCount = db.ImportSms.Count();
@@ -190,7 +190,6 @@ namespace SendSMSHost
                                                                 Number = x,
                                                                 IsAnonymous = true
                                                             });
-
 
                                 db.Contacts.AddRange(contactNumberList);
                                 int contactNumberListCount = contactNumberList.Count();

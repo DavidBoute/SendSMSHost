@@ -7,7 +7,6 @@ using SendSMSHost.Models.Factory;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -210,6 +209,30 @@ namespace SendSMSHost.SignalR
             }
         }
 
+        /// <summary>
+        /// Importeert een lijst van Sms'en in tblImportSms
+        /// </summary>
+        /// <param name="smsDTOList">de te importeren sms</param>
+        public async Task RequestCreateSmsBulk(List<SmsDTO> smsDTOList)
+        {
+            IEnumerable<ImportSms> smsImportList = smsDTOList.Select(x => new ImportSms()
+                                                    {
+                                                        ContactNumber = x.ContactNumber,
+                                                        Message = x.Message
+                                                    })
+                                                    .AsEnumerable();
+
+            db.ImportSms.AddRange(smsImportList);
+
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
         #endregion
 
         #region ChartData
@@ -344,7 +367,7 @@ namespace SendSMSHost.SignalR
         /// <summary>
         /// Start het automatisch zenden van Pending sms'en
         /// </summary>
-        public void toggleSendPending(bool startSend)
+        public void ToggleSendPending(bool startSend)
         {
             Clients.Others.toggleSendPending(startSend);
         }

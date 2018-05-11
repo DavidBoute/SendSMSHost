@@ -5,22 +5,26 @@
 
 <article id="app" class="container-fluid" v-cloak>
     <!--Modal voor maken nieuwe sms op basis van bestaand contact-->
-    <modal-new-sms-contact v-on:close="showNewSmsContactModal = false" v-bind:show="showNewSmsContactModal" v-bind:contact-list="contactList"></modal-new-sms-contact>
+    <modal-new-sms-contact v-on:close="showNewSmsContactModal = false" 
+                           v-bind:show="showNewSmsContactModal" 
+                           v-bind:contact-list="contactList"></modal-new-sms-contact>
 
     <!--Modal voor maken nieuwe sms op basis van nummer-->
-    <modal-new-sms-number v-on:close="showNewSmsNumberModal = false" v-bind:show="showNewSmsNumberModal"></modal-new-sms-number>
+    <modal-new-sms-number v-on:close="showNewSmsNumberModal = false" 
+                          v-bind:show="showNewSmsNumberModal"></modal-new-sms-number>
 
     <!--Modal voor selectie nieuwe sms: contact of nummer-->
     <modal-select v-on:close="closedNewSmsSelectModal"
                   v-bind:show="showNewSmsSelectModal"></modal-select>
 
-    @*<cust-file-input :label="'Browse...'" :value="fileToImportName" v-on:input="onFileInput"></cust-file-input>*@
-    <cust-file-input></cust-file-input>
+    <!--Modal voor import van Excel-bestanden-->
+    <modal-import v-on:close="showImportModal = false"
+                  v-bind:show="showImportModal"></modal-import>
 
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-2 h3 ">{{ message }}</div>
-            <div class="col-md-5 h3" v-if="showButtons">
+            <div class="col-md-6 h3" v-if="showButtons">
                 <div class="container-fluid">
                     <div class="row text-right">
                         <button v-on:click="showNewSmsSelectModal = true" class="btn btn-warning col-sm">New</button>
@@ -28,6 +32,7 @@
                         <button v-on:click="sendSelected(currentSms.Id)" class="btn btn-success col-sm">Send Selected</button>
                         <button v-on:click="toggleSendPending(!sendStatus)" class="btn btn-success col-sm" v-if="!sendStatus">Start sending</button>
                         <button v-on:click="toggleSendPending(!sendStatus)" class="btn btn-danger col-sm" v-if="sendStatus">Stop sending</button>
+                        <button v-on:click="showImportModal = true" class="btn btn-warning col-sm">Import</button>
                     </div>
                 </div>
             </div>

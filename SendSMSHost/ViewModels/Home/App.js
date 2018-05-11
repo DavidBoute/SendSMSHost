@@ -202,38 +202,122 @@ Vue.component('modal-new-sms-number', {
   `
 });
 
-// custom file imput
-Vue.component('cust-file-input', {
-    inheritAttrs: false,
+// modal-template-import
+Vue.component('modal-import', {
+    props: ['show'],
     data: function () {
         return {
             worksheetData: {
-                raw: null,
                 json: null,
-                isValid: false,
                 columnNames: null,
-                fileName: '',
-                sheetName: ''
+                fileName: ''
+            },
+            selectedFields: {
+                Message: '',
+                ContactNumber: ''
             }
         };
     },
+    methods: {
+        worksheetDataChanged: function (data) {
+            this.worksheetData = data;
+        },
+        selectedFieldsChanged: function (data) {
+            this.selectedFields = data;
+        },
+        importeerSms: function () {
+            var vm = this;
+            for (key in vm.selectedFields) {
+                if (vm.selectedFields[key] == "") {
+                    alert('Maak een selectie: ' + key);
+                    return;
+                }
+            }
+
+            var smsImportData = [];
+            vm.worksheetData.json.forEach(element => {
+                var sms = {};
+                for (key in vm.selectedFields) {
+                    var field = vm.selectedFields[key];
+                    sms[key] = element[field];
+                }
+                smsImportData.push(sms);
+            });
+
+            app.requestCreateSmsBulk(smsImportData);
+
+            this.$emit('close');
+        }
+    },
+    template: `
+        <transition name="modal">
+            <div class ="modal-mask" v-show="show">
+                <div class ="modal-wrapper">
+                    <div class ="modal-container">
+                        <div class ="modal-header h3">
+                            <slot name="header">
+                                Importeer een spreadsheet:
+                            </slot>
+                        </div>
+
+                        <div class ="modal-body">
+                            <slot name="body">
+                                <div>
+                                    <file-upload v-on:worksheetData-change="worksheetDataChanged" 
+                                                :filename="worksheetData.fileName"></file-upload>
+                                </div>
+                                <div>
+                                    <preview-data :columns="worksheetData.columnNames" 
+                                                    :data="worksheetData.json" 
+                                                    :noRowsPreview="5" 
+                                                    :tableCaption="'Preview data'" ></preview-data>
+                                </div>
+                                <div>
+                                    <select-fields v-on:selectedFields-change="selectedFieldsChanged" 
+                                                    :columns="worksheetData.columnNames" 
+                                                    :importfields="selectedFields" 
+                                                    :caption="'Koppel de velden om te importeren'"></select-fields>
+                                </div>
+                            </slot>
+                        </div>
+
+                        <div class ="modal-footer">
+                            <slot name="footer">
+                                <button class ="btn btn-primary" v-on:click="importeerSms">Import</button>
+                                <button class ="btn btn-primary" v-on:click="$emit('close','cancel')">Cancel</button>
+                            </slot>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+  `
+});
+
+
+// file-upload
+Vue.component('file-upload', {
+    inheritAttrs: false,
+    props: ['filename'],
     computed: {
         inputListeners: function () {
             var vm = this;
             // `Object.assign` merges objects together to form a new object
             return Object.assign({},
-              // We add all the listeners from the parent
-              this.$listeners,
-              // Then we can add custom listeners or override the
-              // behavior of some listeners.
-              {
-                  // This ensures that the component works with v-model
-                  input: function (event) {
-                      vm.$emit('input', event.target);
-                      if (event.target.files.length !== 0)
-                          vm.convertFile(event.target.files[0]);
-                  }
-              }
+                // We add all the listeners from the parent
+                this.$listeners,
+                // Then we can add custom listeners or override the
+                // behavior of some listeners.
+                {
+                    // This ensures that the component works with v-model
+                    input: function (event) {
+                        vm.$emit('input', event.target);
+                        if (event.target.files.length !== 0) {
+                            vm.convertFile(event.target.files[0]);
+                        }
+                           
+                    }
+                }
             );
         }
     },
@@ -244,13 +328,17 @@ Vue.component('cust-file-input', {
             // Validatie bestand TODO echt uitwerken
             var isValid = false;
             isValid = file !== null
-                     && file.name.trim().length !== 0;
+                && file.name.trim().length !== 0;
 
             if (!isValid) return;
 
-            var vmData = vm.worksheetData;
-            vmData.fileName = file.name;
-            vmData.isValid = isValid;
+            var worksheetData = {
+                json: null,
+                columnNames: null,
+                fileName: ''
+            };
+
+            worksheetData.fileName = file.name;
 
             var reader = new FileReader();
             reader.onload = function (e) {
@@ -269,18 +357,19 @@ Vue.component('cust-file-input', {
                 var wsname = wb.SheetNames[0];
                 var ws = wb.Sheets[wsname];
 
-                /* load data in viewmodel */
-                vmData.raw = ws;
-                vmData.json = XLSX.utils.sheet_to_json(ws);
-                vmData.sheetName = wsname;
-                vmData.columnNames = Object.keys(vmData.json[0]);
+                /* load data in object */
+                worksheetData.json = XLSX.utils.sheet_to_json(ws);
+                worksheetData.columnNames = Object.keys(worksheetData.json[0]);
+
+                /* emit event to notify parent*/
+                vm.$emit('worksheetData-change', worksheetData);
             };
 
             reader.readAsArrayBuffer(file);
         }
     },
     template: `
-        <div class="container" style="margin-top: 20px">
+        <div class="container">
             <div class ="form-inline">
                 <div class="input-group">
                     <label class="input-group-btn">
@@ -291,18 +380,15 @@ Vue.component('cust-file-input', {
                             v-on="inputListeners">
                         </span>
                     </label>
-                    <input class ="form-control" readonly type="text" :value="worksheetData.fileName">
+                    <input class ="form-control" readonly type="text" :value="filename">
                 </div>
-            </div>
-            <div>
-                <data-grid :columns="worksheetData.columnNames" :data="worksheetData.json" :noRowsPreview="5" :tableCaption="'Preview data'" ></data-grid>
             </div>
         </div>
   `
 });
 
-// datagrid
-Vue.component('data-grid', {
+// preview-data
+Vue.component('preview-data', {
     props: {
         columns: Array,
         data: Array,
@@ -311,7 +397,7 @@ Vue.component('data-grid', {
     },
     data: function () {
         return {
-            smsImportFields: ['Message', 'ContactNumber']
+            smsImportData: Array
         };
     },
     computed: {
@@ -325,22 +411,10 @@ Vue.component('data-grid', {
         }
     },
     template: `
-        <div class ="table-responsive" v-if="data">
-            <div class ="alert alert-warning"" style="margin-top: 20px">
-                <div class="h4" style="margin-top: 0px">Koppel de velden om te importeren</div>
-                <div class="form-inline">
-                    <div v-for="field in smsImportFields" class ="form-group form-col" style="margin-right: 20px">
-                        <label>{{field}}</label>
-                        <select class="form-control">
-                            <option v-for="key in columns" :value="key">{{key}}</option>
-                        </select>
-                    </div>
-                    <button class ="btn btn-primary btn-md">Import</button>
-                </div>
-            </div>
+        <div class ="table-responsive  list-scrollable" v-if="data">         
             <div class ="alert alert-light">
                 <table class ="table table-striped table-bordered table-hover table-sm">
-                    <caption class="h4" style="margin: 0px; padding-top: 0px">{{tableCaption +' (top ' + noRowsPreview +' rows)' }}</caption>
+                    <caption class="h4" style="margin: 0px; padding-top: 0px">{{tableCaption +' (top ' + noRowsPreview +' rows of '+ data.length +')' }}</caption>
                     <thead>
                       <tr>
                         <th v-for="key in columns" scope="col" class ="table-header-truncate">{{key}}</th>
@@ -354,6 +428,38 @@ Vue.component('data-grid', {
                       </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    `
+});
+
+// select-fields
+Vue.component('select-fields', {
+    props: {
+        columns: Array,
+        importfields: null,
+        caption:''
+    },
+    methods: {
+        selectedFieldsChanged: function () {
+            var vm = this;
+
+            /* emit event to notify parent*/
+            vm.$emit('selectedFields-change', vm.importfields);
+        }
+    },
+    template: `
+        <div v-if="columns">
+            <div class ="alert alert-warning" style="margin-top: 20px">
+                <div class="h4" style="margin-top: 0px">{{caption}}</div>
+                    <div v-for="field in Object.keys(importfields)" class ="form-group form-col" style="margin-right: 20px">
+                        <label>{{field}}</label>
+                        <select class ="form-control" v-model="importfields[field]" v-on:change="selectedFieldsChanged">
+                            <option disabled value="">Kies een kolom</option>
+                            <option v-for="key in columns" :value="key">{{key}}</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
     `
@@ -373,6 +479,7 @@ var app = new Vue({
         showNewSmsSelectModal: false,
         showNewSmsContactModal: false,
         showNewSmsNumberModal: false,
+        showImportModal: false,
         newSms: null,
         sendStatus: null
     },

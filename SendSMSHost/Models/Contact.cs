@@ -19,10 +19,5 @@ namespace SendSMSHost.Models
         public bool IsAnonymous { get; set; }
 
         public virtual ICollection<Sms> Sms { get; set; }
-
-        public static Contact GetContactByGuid(SendSMSHostContext context, Guid guid)
-        {
-            return context.Contacts.FirstOrDefault(x => x.Id == guid);
-        }
     }
 }
