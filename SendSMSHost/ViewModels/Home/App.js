@@ -7,8 +7,7 @@ Vue.component('modal-select', {
         <transition name="modal">
             <div class ="modal-mask" v-show="show">
                 <div class ="modal-wrapper">
-                    <div class ="modal-container">
-
+                    <div class ="modal-container modal-container-fixed-500">
                         <div class ="modal-header">
                             <slot name="header">
                                 Maak een nieuwe sms op basis van:
@@ -81,8 +80,7 @@ Vue.component('modal-new-sms-contact', {
         <transition name="modal">
             <div class ="modal-mask" v-show="show">
                 <div class ="modal-wrapper">
-                    <div class ="modal-container">
-
+                    <div class ="modal-container modal-container-fixed-500">
                         <div class ="modal-header">
                             <slot name="header">
                                 Nieuw bericht
@@ -163,8 +161,7 @@ Vue.component('modal-new-sms-number', {
         <transition name="modal">
             <div class ="modal-mask" v-show="show">
                 <div class ="modal-wrapper">
-                    <div class ="modal-container">
-
+                    <div class ="modal-container modal-container-fixed-500">
                         <div class ="modal-header">
                             <slot name="header">
                                 Nieuw bericht
@@ -294,6 +291,69 @@ Vue.component('modal-import', {
   `
 });
 
+// modal-template-compose
+Vue.component('modal-compose', {
+    props: ['show'],
+    data: function () {
+        return {
+            worksheetData: {
+                json: null,
+                columnNames: null,
+                fileName: ''
+            }
+        };
+    },
+    methods: {
+        worksheetDataChanged: function (data) {
+            this.worksheetData = data;
+        },
+        importeerSms: function () {
+            var vm = this;
+
+            this.$emit('close');
+        }
+    },
+    template: `
+        <transition name="modal">
+            <div class ="modal-mask" v-show="show">
+                <div class ="modal-wrapper">
+                    <div class ="modal-container">
+                        <div class ="modal-header h3">
+                            <slot name="header">
+                                Importeer een spreadsheet:
+                            </slot>
+                        </div>
+
+                        <div class ="modal-body">
+                            <slot name="body">
+                                <div>
+                                    <file-upload v-on:worksheetData-change="worksheetDataChanged" 
+                                                :filename="worksheetData.fileName"></file-upload>
+                                </div>
+                                <div>
+                                    <preview-data :columns="worksheetData.columnNames" 
+                                                    :data="worksheetData.json" 
+                                                    :noRowsPreview="5" 
+                                                    :tableCaption="'Preview data'" ></preview-data>
+                                </div>
+                                <div>
+                                    <textarea></textarea>
+                                </div>
+                            </slot>
+                        </div>
+
+                        <div class ="modal-footer">
+                            <slot name="footer">
+                                <button class ="btn btn-primary" v-on:click="importeerSms">Import</button>
+                                <button class ="btn btn-primary" v-on:click="$emit('close','cancel')">Cancel</button>
+                            </slot>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+  `
+});
 
 // file-upload
 Vue.component('file-upload', {
@@ -397,7 +457,8 @@ Vue.component('preview-data', {
     },
     data: function () {
         return {
-            smsImportData: Array
+            smsImportData: Array,
+            displayGrid: false
         };
     },
     computed: {
@@ -408,19 +469,36 @@ Vue.component('preview-data', {
             else {
                 return null;
             }
+        },
+        caption: function () {
+            if (this.displayGrid) {
+                return this.tableCaption + ' (top ' + this.noRowsPreview + ' rows of ' + this.data.length + ')';
+            }
+            else {
+                return this.tableCaption;
+            }
+
+        }
+    },
+    methods: {
+        toggleDisplayGrid: function (value) {
+            this.displayGrid = !value;
         }
     },
     template: `
         <div class ="table-responsive  list-scrollable" v-if="data">         
             <div class ="alert alert-light">
                 <table class ="table table-striped table-bordered table-hover table-sm">
-                    <caption class="h4" style="margin: 0px; padding-top: 0px">{{tableCaption +' (top ' + noRowsPreview +' rows of '+ data.length +')' }}</caption>
+                    <caption class="h4" style="margin: 0px; padding-top: 0px">
+                        {{caption}}
+                        <button class="btn btn-primary" style="float: right;" v-on:click="toggleDisplayGrid(displayGrid)">{{displayGrid ? 'Hide' : 'Show'}}</button>
+                    </caption>
                     <thead>
                       <tr>
                         <th v-for="key in columns" scope="col" class ="table-header-truncate">{{key}}</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody v-if="displayGrid">
                       <tr v-for="entry in previewData">
                         <td v-for="key in columns" scope="row">
                             {{entry[key]}}
@@ -476,10 +554,13 @@ var app = new Vue({
         currentSms: null,
         editMode: false,
         showButtons: false,
-        showNewSmsSelectModal: false,
-        showNewSmsContactModal: false,
-        showNewSmsNumberModal: false,
-        showImportModal: false,
+        showModal: {
+            showNewSmsSelectModal: false,
+            showNewSmsContactModal: false,
+            showNewSmsNumberModal: false,
+            showImportModal: false,
+            showComposeModal: true
+        },        
         newSms: null,
         sendStatus: null
     },
@@ -567,13 +648,13 @@ var app = new Vue({
 
         // Modal pages
         closedNewSmsSelectModal: function (selectedModal) {
-            this.showNewSmsSelectModal = false;
+            this.showModal.showNewSmsSelectModal = false;
             switch (selectedModal) {
                 case 'showNewSmsContactModal':
-                    this.showNewSmsContactModal = true;
+                    this.showModal.showNewSmsContactModal = true;
                     break;
                 case 'showNewSmsNumberModal':
-                    this.showNewSmsNumberModal = true;
+                    this.showModal.showNewSmsNumberModal = true;
                     break;
             }
         },

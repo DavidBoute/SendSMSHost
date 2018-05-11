@@ -5,21 +5,25 @@
 
 <article id="app" class="container-fluid" v-cloak>
     <!--Modal voor maken nieuwe sms op basis van bestaand contact-->
-    <modal-new-sms-contact v-on:close="showNewSmsContactModal = false" 
-                           v-bind:show="showNewSmsContactModal" 
+    <modal-new-sms-contact v-on:close="showModal.showNewSmsContactModal = false"
+                           v-bind:show="showModal.showNewSmsContactModal"
                            v-bind:contact-list="contactList"></modal-new-sms-contact>
 
     <!--Modal voor maken nieuwe sms op basis van nummer-->
-    <modal-new-sms-number v-on:close="showNewSmsNumberModal = false" 
-                          v-bind:show="showNewSmsNumberModal"></modal-new-sms-number>
+    <modal-new-sms-number v-on:close="showModal.showNewSmsNumberModal = false"
+                          v-bind:show="showModal.showNewSmsNumberModal"></modal-new-sms-number>
 
     <!--Modal voor selectie nieuwe sms: contact of nummer-->
     <modal-select v-on:close="closedNewSmsSelectModal"
-                  v-bind:show="showNewSmsSelectModal"></modal-select>
+                  v-bind:show="showModal.showNewSmsSelectModal"></modal-select>
 
     <!--Modal voor import van Excel-bestanden-->
-    <modal-import v-on:close="showImportModal = false"
-                  v-bind:show="showImportModal"></modal-import>
+    <modal-import v-on:close="showModal.showImportModal = false"
+                  v-bind:show="showModal.showImportModal"></modal-import>
+
+    <!--Modal voor samenstellen van sms'en-->
+    <modal-compose v-on:close="showModal.showComposeModal = false"
+                  v-bind:show="showModal.showComposeModal"></modal-compose>
 
     <div class="container-fluid">
         <div class="row">
@@ -27,12 +31,12 @@
             <div class="col-md-6 h3" v-if="showButtons">
                 <div class="container-fluid">
                     <div class="row text-right">
-                        <button v-on:click="showNewSmsSelectModal = true" class="btn btn-warning col-sm">New</button>
+                        <button v-on:click="showModal.showNewSmsSelectModal = true" class="btn btn-warning col-sm">New</button>
                         <button v-on:click="loadData()" class="btn btn-warning col-sm">Refresh</button>
                         <button v-on:click="sendSelected(currentSms.Id)" class="btn btn-success col-sm">Send Selected</button>
                         <button v-on:click="toggleSendPending(!sendStatus)" class="btn btn-success col-sm" v-if="!sendStatus">Start sending</button>
                         <button v-on:click="toggleSendPending(!sendStatus)" class="btn btn-danger col-sm" v-if="sendStatus">Stop sending</button>
-                        <button v-on:click="showImportModal = true" class="btn btn-warning col-sm">Import</button>
+                        <button v-on:click="showModal.showImportModal = true" class="btn btn-warning col-sm">Import</button>
                     </div>
                 </div>
             </div>
