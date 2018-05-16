@@ -225,7 +225,7 @@ Vue.component('modal-import', {
         importeerSms: function () {
             var vm = this;
             for (key in vm.selectedFields) {
-                if (vm.selectedFields[key] == "") {
+                if (vm.selectedFields[key] === "") {
                     alert('Maak een selectie: ' + key);
                     return;
                 }
@@ -300,6 +300,10 @@ Vue.component('modal-compose', {
                 json: null,
                 columnNames: null,
                 fileName: ''
+            },
+            textboxText: '',
+            selectedFields: {
+                ContactNumber: ''
             }
         };
     },
@@ -307,11 +311,98 @@ Vue.component('modal-compose', {
         worksheetDataChanged: function (data) {
             this.worksheetData = data;
         },
+        selectedFieldsChanged: function (data) {
+            this.selectedFields = data;
+        },
+        getFieldValue: function (fieldName, record, columns) {
+            var vm = this;
+            var text = "";
+
+            if (columns.includes(fieldName)) {
+                text = record[fieldName];
+            }
+            else {
+                text = "Ongeldige verwijzing!";
+            }
+
+            return text;
+        },
+        convertTemplateToHTML: function (template, record, columns) {
+            var vm = this;
+            var text = '';
+            var field = false;
+
+            var textArray = template.split(/([$])/g);
+            textArray.forEach(function (part) {
+                if (part === '$') {
+                    field = !field;
+                }
+                else {
+                    if (field) {
+                        text += "<span style='color: blue'>";
+                        text += vm.getFieldValue(part, record, columns);
+                        text += "</span>";
+                    }
+                    else {
+                        text += "<span>" + part + "</span>";
+                    }
+                }
+            });
+
+            return text;
+        },
+        getSmsContentFromHtml: function (html) {
+            return html.replace(/(<([^>]+)>)/ig, "");
+        },
+
         importeerSms: function () {
             var vm = this;
 
+            var columns = vm.worksheetData.columnNames;
+            var template = vm.textboxText;
+
+            for (key in vm.selectedFields) {
+                if (vm.selectedFields[key] === "") {
+                    alert('Maak een selectie: ' + key);
+                    return;
+                }
+            }
+
+            if (columns === null) {
+                alert('Importeer een spreadsheet! ');
+                return;
+            }
+
+            if (template === '') {
+                alert('Geef een template in! ');
+                return;
+            }
+
+            var smsImportData = [];
+            vm.worksheetData.json.forEach(element => {
+                var sms = {};
+                for (key in vm.selectedFields) {
+                    var field = vm.selectedFields[key];
+                    sms[key] = element[field];
+                }
+
+                sms['Message'] = vm.getSmsContentFromHtml(vm.convertTemplateToHTML(template, element, columns));
+
+                smsImportData.push(sms);
+            });
+
+            app.requestCreateSmsBulk(smsImportData);
+
+
             this.$emit('close');
         }
+    },
+    provide: function () {
+        return {
+            getFieldValue: this.getFieldValue,
+            convertTemplateToHTML: this.convertTemplateToHTML,
+            getSmsContentFromHtml: this.getSmsContentFromHtml
+        };
     },
     template: `
         <transition name="modal">
@@ -326,19 +417,41 @@ Vue.component('modal-compose', {
 
                         <div class ="modal-body">
                             <slot name="body">
-                                <div>
+
                                     <file-upload v-on:worksheetData-change="worksheetDataChanged" 
                                                 :filename="worksheetData.fileName"></file-upload>
-                                </div>
-                                <div>
+
                                     <preview-data :columns="worksheetData.columnNames" 
                                                     :data="worksheetData.json" 
                                                     :noRowsPreview="5" 
                                                     :tableCaption="'Preview data'" ></preview-data>
-                                </div>
-                                <div>
-                                    <textarea></textarea>
-                                </div>
+                                    
+                                    <div class="container-fluid" v-if="worksheetData.columnNames">
+                                        <div class="row">
+                                            <select-fields v-on:selectedFields-change="selectedFieldsChanged" 
+                                                                        :columns="worksheetData.columnNames" 
+                                                                        :importfields="selectedFields" 
+                                                                        :caption="'Koppel de velden om te importeren'"></select-fields>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <div class="panel panel-default" >
+                                                    <div class="panel-heading clearfix">Template</div>
+                                                    <textarea v-model="textboxText" v-if="worksheetData.columnNames"
+                                                                class="form-control input-md panel-body"
+                                                                style="max-width: 100%; min-height: 100px;"></textarea>
+                                                    <div class="panel-footer">
+                                                        Gebruik de naam van een kolom tussen $-tekens om data in te voegen.
+                                                    </div>
+                                                </div>
+                                             </div>
+                                            <div class="col-md-3">
+                                                <linked-textbox :templateText="textboxText"
+                                                                :columns="worksheetData.columnNames"
+                                                                :data="worksheetData.json"></linked-textbox>
+                                            </div>                                      
+                                        </div>
+                                    </div>
                             </slot>
                         </div>
 
@@ -375,7 +488,7 @@ Vue.component('file-upload', {
                         if (event.target.files.length !== 0) {
                             vm.convertFile(event.target.files[0]);
                         }
-                           
+
                     }
                 }
             );
@@ -429,7 +542,7 @@ Vue.component('file-upload', {
         }
     },
     template: `
-        <div class="container">
+        <div class="container-fluid" style="margin-bottom: 10px">
             <div class ="form-inline">
                 <div class="input-group">
                     <label class="input-group-btn">
@@ -486,7 +599,7 @@ Vue.component('preview-data', {
         }
     },
     template: `
-        <div class ="table-responsive  list-scrollable" v-if="data">         
+        <div class ="table-responsive list-scrollable container-fluid" v-if="data">         
             <div class ="alert alert-light">
                 <table class ="table table-striped table-bordered table-hover table-sm">
                     <caption class="h4" style="margin: 0px; padding-top: 0px">
@@ -494,17 +607,19 @@ Vue.component('preview-data', {
                         <button class="btn btn-primary" style="float: right;" v-on:click="toggleDisplayGrid(displayGrid)">{{displayGrid ? 'Hide' : 'Show'}}</button>
                     </caption>
                     <thead>
-                      <tr>
+                        <tr>
                         <th v-for="key in columns" scope="col" class ="table-header-truncate">{{key}}</th>
-                      </tr>
+                        </tr>
                     </thead>
-                    <tbody v-if="displayGrid">
-                      <tr v-for="entry in previewData">
-                        <td v-for="key in columns" scope="row">
-                            {{entry[key]}}
-                        </td>
-                      </tr>
-                    </tbody>
+                    <transition>
+                        <tbody v-if="displayGrid">
+                            <tr v-for="entry in previewData">
+                            <td v-for="key in columns" scope="row">
+                                {{entry[key]}}
+                            </td>
+                            </tr>
+                        </tbody>
+                    </transition>
                 </table>
             </div>
         </div>
@@ -516,7 +631,7 @@ Vue.component('select-fields', {
     props: {
         columns: Array,
         importfields: null,
-        caption:''
+        caption: ''
     },
     methods: {
         selectedFieldsChanged: function () {
@@ -527,7 +642,7 @@ Vue.component('select-fields', {
         }
     },
     template: `
-        <div v-if="columns">
+        <div v-if="columns" class="container-fluid">
             <div class ="alert alert-warning" style="margin-top: 20px">
                 <div class="h4" style="margin-top: 0px">{{caption}}</div>
                     <div v-for="field in Object.keys(importfields)" class ="form-group form-col" style="margin-right: 20px">
@@ -541,6 +656,76 @@ Vue.component('select-fields', {
             </div>
         </div>
     `
+});
+
+// linked-textbox
+Vue.component('linked-textbox', {
+    props: {
+        columns: Array,
+        data: null,
+        templateText: ''
+    },
+    inject: [
+        'getFieldValue',
+        'convertTemplateToHTML',
+        'getSmsContentFromHtml'
+    ],
+    data: function() {
+        return {
+            rowIndex: 0
+        };
+    },
+    computed: {
+        textHTML: function () {
+            var vm = this;
+            return vm.convertTemplateToHTML(vm.templateText, vm.data[vm.rowIndex], vm.columns);
+        },
+        characterCountWithoutHTML: function () {
+            var vm = this;
+            return vm.getSmsContentFromHtml(vm.textHTML).length;
+        },
+        characterCountWithStyle: function () {
+            var vm = this;
+            var text = "";
+
+            if (vm.characterCountWithoutHTML <= 160) {
+                text = "<span>";
+            }
+            else {
+                text = "<span style='color: red'>";
+            }
+            text += " (" + vm.characterCountWithoutHTML + "/160)";
+            text += "</span>";
+
+            return text;
+        }
+    },
+    methods: {
+        setCurrentIndex: function (newIndex) {
+            var vm = this;
+
+            if (newIndex >= 0 && newIndex < vm.data.length) {
+                vm.rowIndex = newIndex;
+            }
+        }       
+    },
+    template: `
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <button class ="btn btn-primary" @click="setCurrentIndex(0)"> << </button>
+                    <button class ="btn btn-primary" @click="setCurrentIndex(rowIndex-1)"> < </button> 
+                    <span>{{(rowIndex + 1) + "/" + data.length}}</span>
+                    <button class ="btn btn-primary" @click="setCurrentIndex(rowIndex+1)"> > </button>
+                    <button class ="btn btn-primary" @click="setCurrentIndex(data.length-1)"> >> </button>
+                </div>                
+                <div class="panel-body" style="padding-top: 0px; padding-bottom: 0px;">
+                    <div v-html="textHTML"  style="word-wrap: break-word; min-height: 100px; margin: 0px"></div>
+                </div>
+                <div class="panel-footer text-right">
+                    <div v-html="characterCountWithStyle"></div>
+                </div>
+            </div>
+        `
 });
 
 var app = new Vue({
@@ -559,8 +744,8 @@ var app = new Vue({
             showNewSmsContactModal: false,
             showNewSmsNumberModal: false,
             showImportModal: false,
-            showComposeModal: true
-        },        
+            showComposeModal: false
+        },
         newSms: null,
         sendStatus: null
     },
@@ -617,7 +802,7 @@ var app = new Vue({
             sms.isActive = true;
             this.currentSms = Object.assign({}, sms); // shallow copy ipv pointer
             this.currentSms.ContactIsNotAnonymous = this.currentSms.ContactFirstName !== null
-                                                    || this.currentSms.ContactLastName !== null;
+                || this.currentSms.ContactLastName !== null;
             this.hideEditMode();
         },
 
@@ -685,6 +870,6 @@ var app = new Vue({
         removeSms: function (smsDTO) {
             this.smsList = this.smsList.filter(x => x.Id !== smsDTO.Id);
             this.currentSms = null;
-        }    
+        }
     }
 });

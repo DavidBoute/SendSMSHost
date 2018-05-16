@@ -37,6 +37,7 @@
                         <button v-on:click="toggleSendPending(!sendStatus)" class="btn btn-success col-sm" v-if="!sendStatus">Start sending</button>
                         <button v-on:click="toggleSendPending(!sendStatus)" class="btn btn-danger col-sm" v-if="sendStatus">Stop sending</button>
                         <button v-on:click="showModal.showImportModal = true" class="btn btn-warning col-sm">Import</button>
+                        <button v-on:click="showModal.showComposeModal = true" class="btn btn-warning col-sm">Compose</button>
                     </div>
                 </div>
             </div>
