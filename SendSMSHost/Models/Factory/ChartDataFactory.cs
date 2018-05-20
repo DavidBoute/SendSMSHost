@@ -31,8 +31,9 @@ namespace SendSMSHost.Models.Factory
         [JsonProperty("data")]
         public int[] Data { get; set; }
 
+        // string of string[]
         [JsonProperty("backgroundColor")]
-        public string BackgroundColor { get; set; }
+        public object BackgroundColor { get; set; } 
 
         [JsonProperty("borderColor")]
         public string BorderColor { get; set; }
@@ -56,28 +57,31 @@ namespace SendSMSHost.Models.Factory
                 lastLogs = lastLogs.Where(z => z.Operation != "DELETE");
             };
 
+            DataSet dataSet = new DataSet()
+            {
+                Label = "Forever",
+                BorderColor = "#868E96",
+                BorderWidth = 1
+            };
+
             var data = db.Status
-                            .Select(s => new
-                            {
-                                Label = s.Name,
-                                Data = lastLogs.Count(l => l.StatusName == s.Name),
-                                BackgroundColor = s.DefaultColorHex
-                            })
-                            .AsEnumerable()
-                            .Select(d => new DataSet
-                            {
-                                Label = d.Label,
-                                Data = new int[] { d.Data },
-                                BackgroundColor = d.BackgroundColor,
-                                BorderColor = "#868E96",
-                                BorderWidth = 1
-                            })
-                            .ToArray();
+                .Select(s => new
+                {
+                    Label = s.Name,
+                    Data = lastLogs.Count(l => l.StatusName == s.Name),
+                    BackgroundColor = s.DefaultColorHex
+                })
+                .AsEnumerable()
+                .Select(d => new { d.Data, d.Label, d.BackgroundColor })
+                .ToArray();
+
+            dataSet.Data = data.Select(d => d.Data).ToArray();
+            dataSet.BackgroundColor = data.Select(d => d.BackgroundColor).ToArray();
 
             ChartData chartData = new ChartData
             {
-                Labels = data.Select(x => x.Label).ToArray(),
-                Datasets = data
+                Labels = data.Select(l => l.Label).ToArray(),
+                Datasets = new DataSet[] { dataSet }
             };
 
             return chartData;
@@ -203,7 +207,9 @@ namespace SendSMSHost.Models.Factory
         public ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted)
         {
             List<DateTime> minuteList = new List<DateTime>();
-            DateTime dateHour = DateTime.Today.AddHours(DateTime.Now.Hour);
+            DateTime dateHour = DateTime.Today.AddHours(DateTime.Now.Hour)
+                                                .AddHours(-1)
+                                                .AddMinutes(DateTime.Now.Minute + INTERVAL_MINUTES - DateTime.Now.Minute % INTERVAL_MINUTES);
 
             for (int i = 0; i < (60 / INTERVAL_MINUTES); i++)
             {

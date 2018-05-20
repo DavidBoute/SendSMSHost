@@ -10,6 +10,16 @@ Vue.component('bar-chart', {
     },
 })
 
+// pie-chart
+Vue.component('pie-chart', {
+    extends: VueChartJs.Pie,
+    mixins: [VueChartJs.mixins.reactiveProp],
+    props: ['options'],
+    mounted() {
+        this.renderChart(this.chartData, this.options)
+    },
+})
+
 
 var app = new Vue({
     el: '#app',
@@ -21,7 +31,7 @@ var app = new Vue({
         weekGraph_data: null,
         dayGraph_data: null,
         hourGraph_data: null,
-        weekGraph_options: {
+        barGraph_options: {
             scales: {
                 yAxes: [{
                     ticks: {
