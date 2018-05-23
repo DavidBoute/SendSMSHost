@@ -14,24 +14,76 @@
         </div>
     </header>
 
-    <div class="row">
-        <div class="h4">Forever</div>
-        <pie-chart :chart-data="foreverGraph_data" :options="barGraph_options"></pie-chart>
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title">
+                    <a data-toggle="collapse" class="h4" role="button" aria-expanded="false" data-target="#collapseForever" aria-controls="#collapseForever">
+                        <span class="pull-left title-sidebar">Forever</span>
+                        <span class="pull-right glyphicon glyphicon-resize-small"></span>
+                        <span class="pull-right glyphicon glyphicon-resize-full"></span>
+                        <div class="clearfix"></div>
+                    </a>
+                </div>
+            </div>
+            <div id="collapseForever" class="panel-collapse collapse">
+                <pie-chart :chart-data="foreverGraph_data" :options="barGraph_options" class="chart"></pie-chart>
+            </div>
+        </div>
     </div>
 
-    <div class="row">
-        <div class="h4">Week</div>
-        <bar-chart :chart-data="weekGraph_data" :options="barGraph_options"></bar-chart>
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title">
+                    <a data-toggle="collapse" class="h4" role="button" aria-expanded="false" data-target="#collapseWeek" aria-controls="#collapseWeek">
+                        <span class="pull-left title-sidebar">Week</span>
+                        <span class="pull-right glyphicon glyphicon-resize-small"></span>
+                        <span class="pull-right glyphicon glyphicon-resize-full"></span>
+                        <div class="clearfix"></div>
+                    </a>
+                </div>
+            </div>
+            <div id="collapseWeek" class="panel-collapse collapse">
+                <bar-chart :chart-data="weekGraph_data" :options="barGraph_options" class="chart"></bar-chart>
+            </div>
+        </div>
     </div>
 
-    <div class="row">
-        <div class="h4">Day</div>
-        <bar-chart :chart-data="dayGraph_data" :options="barGraph_options"></bar-chart>
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title">
+                    <a data-toggle="collapse" class="h4" role="button" aria-expanded="false" data-target="#collapseDay" aria-controls="#collapseDay">
+                        <span class="pull-left title-sidebar">Day</span>
+                        <span class="pull-right glyphicon glyphicon-resize-small"></span>
+                        <span class="pull-right glyphicon glyphicon-resize-full"></span>
+                        <div class="clearfix"></div>
+                    </a>
+                </div>
+            </div>
+            <div id="collapseDay" class="panel-collapse collapse">
+                <bar-chart :chart-data="dayGraph_data" :options="barGraph_options" class="chart"></bar-chart>
+            </div>
+        </div>
     </div>
 
-    <div class="row">
-        <div class="h4">Hour</div>
-        <bar-chart :chart-data="hourGraph_data" :options="barGraph_options"></bar-chart>
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title">
+                    <a data-toggle="collapse" class="h4" role="button" aria-expanded="false" data-target="#collapseHour" aria-controls="#collapseHour">
+                        <span class="pull-left title-sidebar">Hour</span>
+                        <span class="pull-right glyphicon glyphicon-resize-small"></span>
+                        <span class="pull-right glyphicon glyphicon-resize-full"></span>
+                        <div class="clearfix"></div>
+                    </a>
+                </div>
+            </div>
+            <div id="collapseHour" class="panel-collapse collapse">
+                <bar-chart :chart-data="hourGraph_data" :options="barGraph_options" class="chart"></bar-chart>
+            </div>
+        </div>
     </div>
 
 </article>

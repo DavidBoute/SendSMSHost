@@ -1,8 +1,11 @@
 ﻿var apiURL = '/api/';
 
-// modal-template-select
+// modal-select
 Vue.component('modal-select', {
     props: ['show'],
+    inject: [
+        'showModalWindow'
+    ],
     template: `
         <transition name="modal">
             <div class ="modal-mask" v-show="show">
@@ -19,10 +22,10 @@ Vue.component('modal-select', {
                                 <div class ="form-group">
                                     <table>
                                         <tr>
-                                            <td><button class ="btn btn-primary btn-block" v-on:click="$emit('close','showNewSmsContactModal')">Contact</button></td>
+                                            <td><button class ="btn btn-primary btn-block" v-on:click="showModalWindow('NewSmsContactModal')">Contact</button></td>
                                         </tr>
                                         <tr>
-                                            <td><button class ="btn btn-primary btn-block" v-on:click="$emit('close','showNewSmsNumberModal')">Nummer</button></td>
+                                            <td><button class ="btn btn-primary btn-block" v-on:click="showModalWindow('NewSmsNumberModal')">Nummer</button></td>
                                         </tr>
                                     </table>
                                 </div>
@@ -41,7 +44,7 @@ Vue.component('modal-select', {
   `
 });
 
-// modal-template-new-sms-contact
+// modal-new-sms-contact
 Vue.component('modal-new-sms-contact', {
     props: ['show', 'contact-list'],
     data: function () {
@@ -122,7 +125,7 @@ Vue.component('modal-new-sms-contact', {
   `
 });
 
-// modal-template-new-sms-number
+// modal-new-sms-number
 Vue.component('modal-new-sms-number', {
     props: ['show'],
     data: function () {
@@ -199,7 +202,7 @@ Vue.component('modal-new-sms-number', {
   `
 });
 
-// modal-template-import
+// modal-import
 Vue.component('modal-import', {
     props: ['show'],
     data: function () {
@@ -215,6 +218,10 @@ Vue.component('modal-import', {
             }
         };
     },
+    inject: [
+        'showModalWindow',
+        'openValidateModal'
+    ],
     methods: {
         worksheetDataChanged: function (data) {
             this.worksheetData = data;
@@ -232,19 +239,34 @@ Vue.component('modal-import', {
             }
 
             var smsImportData = [];
+            var index = 0;
             vm.worksheetData.json.forEach(element => {
                 var sms = {};
                 for (key in vm.selectedFields) {
                     var field = vm.selectedFields[key];
                     sms[key] = element[field];
                 }
+
+                sms['Id'] = index;
+                index++;
+
                 smsImportData.push(sms);
             });
 
-            app.requestCreateSmsBulk(smsImportData);
+            //app.requestCreateSmsBulk(smsImportData);
+
+            var fieldsArray = Object.keys(vm.selectedFields);
+
+            vm.openValidateModal(fieldsArray, smsImportData);
 
             this.$emit('close');
         }
+    },
+    provide: function () {
+        return {
+            selectedFieldsChanged_parent: this.selectedFieldsChanged,
+            worksheetDataChanged_parent: this.worksheetDataChanged
+        };
     },
     template: `
         <transition name="modal">
@@ -260,8 +282,7 @@ Vue.component('modal-import', {
                         <div class ="modal-body">
                             <slot name="body">
                                 <div>
-                                    <file-upload v-on:worksheetData-change="worksheetDataChanged" 
-                                                :filename="worksheetData.fileName"></file-upload>
+                                    <file-upload :filename="worksheetData.fileName"></file-upload>
                                 </div>
                                 <div>
                                     <preview-data :columns="worksheetData.columnNames" 
@@ -270,8 +291,7 @@ Vue.component('modal-import', {
                                                     :tableCaption="'Preview data'" ></preview-data>
                                 </div>
                                 <div>
-                                    <select-fields v-on:selectedFields-change="selectedFieldsChanged" 
-                                                    :columns="worksheetData.columnNames" 
+                                    <select-fields  :columns="worksheetData.columnNames" 
                                                     :importfields="selectedFields" 
                                                     :caption="'Koppel de velden om te importeren'"></select-fields>
                                 </div>
@@ -291,7 +311,7 @@ Vue.component('modal-import', {
   `
 });
 
-// modal-template-compose
+// modal-compose
 Vue.component('modal-compose', {
     props: ['show'],
     data: function () {
@@ -307,6 +327,10 @@ Vue.component('modal-compose', {
             }
         };
     },
+    inject: [
+        'showModalWindow',
+        'openValidateModal'
+    ],
     methods: {
         worksheetDataChanged: function (data) {
             this.worksheetData = data;
@@ -379,6 +403,7 @@ Vue.component('modal-compose', {
             }
 
             var smsImportData = [];
+            var index = 0;
             vm.worksheetData.json.forEach(element => {
                 var sms = {};
                 for (key in vm.selectedFields) {
@@ -388,11 +413,17 @@ Vue.component('modal-compose', {
 
                 sms['Message'] = vm.getSmsContentFromHtml(vm.convertTemplateToHTML(template, element, columns));
 
+                sms['Id'] = index;
+                index++;
+
                 smsImportData.push(sms);
             });
 
-            app.requestCreateSmsBulk(smsImportData);
+            //app.requestCreateSmsBulk(smsImportData);
 
+            var fieldsArray = ['Message', ...Object.keys(vm.selectedFields)];
+
+            vm.openValidateModal(fieldsArray, smsImportData);
 
             this.$emit('close');
         }
@@ -401,7 +432,10 @@ Vue.component('modal-compose', {
         return {
             getFieldValue: this.getFieldValue,
             convertTemplateToHTML: this.convertTemplateToHTML,
-            getSmsContentFromHtml: this.getSmsContentFromHtml
+            getSmsContentFromHtml: this.getSmsContentFromHtml,
+
+            selectedFieldsChanged_parent: this.selectedFieldsChanged,
+            worksheetDataChanged_parent: this.worksheetDataChanged
         };
     },
     template: `
@@ -418,8 +452,7 @@ Vue.component('modal-compose', {
                         <div class ="modal-body">
                             <slot name="body">
 
-                                    <file-upload v-on:worksheetData-change="worksheetDataChanged" 
-                                                :filename="worksheetData.fileName"></file-upload>
+                                    <file-upload :filename="worksheetData.fileName"></file-upload>
 
                                     <preview-data :columns="worksheetData.columnNames" 
                                                     :data="worksheetData.json" 
@@ -428,10 +461,9 @@ Vue.component('modal-compose', {
                                     
                                     <div class="container-fluid" v-if="worksheetData.columnNames">
                                         <div class="row">
-                                            <select-fields v-on:selectedFields-change="selectedFieldsChanged" 
-                                                                        :columns="worksheetData.columnNames" 
-                                                                        :importfields="selectedFields" 
-                                                                        :caption="'Koppel de velden om te importeren'"></select-fields>
+                                            <select-fields :columns="worksheetData.columnNames" 
+                                                           :importfields="selectedFields" 
+                                                           :caption="'Koppel de velden om te importeren'"></select-fields>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-3">
@@ -452,6 +484,63 @@ Vue.component('modal-compose', {
                                             </div>                                      
                                         </div>
                                     </div>
+                            </slot>
+                        </div>
+
+                        <div class ="modal-footer">
+                            <slot name="footer">
+                                <button class ="btn btn-primary" v-on:click="importeerSms">Import</button>
+                                <button class ="btn btn-primary" v-on:click="$emit('close','cancel')">Cancel</button>
+                            </slot>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+  `
+});
+
+// modal-validate
+Vue.component('modal-validate', {
+    props:  {
+        show: Boolean,
+        importdata: null
+    },
+    data: function () {
+        return {
+            data: Array,
+            columns: Array
+        };
+    },
+    inject: [
+        'showModalWindow'
+    ],
+    methods: {
+        importeerSms: function () {
+            //app.requestCreateSmsBulk(smsImportData);
+
+            this.$emit('close');
+        }
+    },
+    provide: function () {
+        return {
+            openModalValidate: this.openModalValidate
+        };
+    },
+    template: `
+        <transition name="modal">
+            <div class ="modal-mask" v-show="show">
+                <div class ="modal-wrapper">
+                    <div class ="modal-container">
+                        <div class ="modal-header h3">
+                            <slot name="header">
+                                Controleer de berichten:
+                            </slot>
+                        </div>
+
+                        <div class ="modal-body">
+                            <slot name="body">
+                                <edit-bulk-sms :columns="importdata.columns" :data="importdata.data" :tableCaption="'Controleer de berichten'"></edit-bulk-sms> 
                             </slot>
                         </div>
 
@@ -494,6 +583,9 @@ Vue.component('file-upload', {
             );
         }
     },
+    inject: [
+        'worksheetDataChanged_parent'
+    ],
     methods: {
         convertFile: function (file) {
             var vm = this;
@@ -534,8 +626,7 @@ Vue.component('file-upload', {
                 worksheetData.json = XLSX.utils.sheet_to_json(ws);
                 worksheetData.columnNames = Object.keys(worksheetData.json[0]);
 
-                /* emit event to notify parent*/
-                vm.$emit('worksheetData-change', worksheetData);
+                vm.worksheetDataChanged_parent(worksheetData);
             };
 
             reader.readAsArrayBuffer(file);
@@ -599,7 +690,7 @@ Vue.component('preview-data', {
         }
     },
     template: `
-        <div class ="table-responsive list-scrollable container-fluid" v-if="data">         
+        <div class ="table-responsive list-scrollable scrollbar container-fluid" v-if="data">         
             <div class ="alert alert-light">
                 <table class ="table table-striped table-bordered table-hover table-sm">
                     <caption class="h4" style="margin: 0px; padding-top: 0px">
@@ -633,12 +724,14 @@ Vue.component('select-fields', {
         importfields: null,
         caption: ''
     },
+    inject: [
+        'selectedFieldsChanged_parent'
+    ],
     methods: {
         selectedFieldsChanged: function () {
             var vm = this;
 
-            /* emit event to notify parent*/
-            vm.$emit('selectedFields-change', vm.importfields);
+            vm.selectedFieldsChanged_parent(vm.importfields);
         }
     },
     template: `
@@ -728,6 +821,195 @@ Vue.component('linked-textbox', {
         `
 });
 
+// edit-bulk-sms
+Vue.component('edit-bulk-sms', {
+    props: {
+        columns: Array,
+        data: Array,
+        tableCaption: String
+    },
+    data: function () {
+        return {
+            activeRow: -1
+        };
+    },
+    computed: {
+        caption: function () {
+            return this.tableCaption + ' (' + this.data.length + ' sms)';
+        },
+        columnsWithValidation: function () {
+            var vm = this;
+
+            return vm.addValidationColumns(vm.columns);
+        },
+    },
+    methods: {
+        addValidationColumns: function (columns) {
+            return [ ...columns, 'Count', 'IsValid', 'Import'];
+        },
+        setActiveSms: function (rowIndex) {
+            var vm = this;
+
+            vm.activeRow = rowIndex;
+        },
+        updateSms: function (updatedSms) {
+            var vm = this;
+
+            Vue.set(vm.data, updatedSms.Id, updatedSms);
+        }
+    },
+    provide: function () {
+        return {
+            setActiveSms: this.setActiveSms,
+            updateSms: this.updateSms
+        };
+    },
+    template: `
+        <div class ="table-responsive list-scrollable scrollbar container-fluid" v-if="data">         
+            <div class ="alert alert-light">
+                <table class ="table table-striped table-hover table-sm">
+                    <caption class="h4" style="margin: 0px; padding-top: 0px">
+                        {{caption}}
+                    </caption>
+                    <thead>
+                        <tr>
+                        <th class="table-row-header-fixed-width"></th>
+                        <th v-for="key in columnsWithValidation" scope="col" class ="table-header-truncate">{{key}}</th>
+                        <th></th>
+                        </tr>
+                    </thead>
+                    <transition>
+                        <tbody>
+                            <tr v-for="entry in data" is="sms-validation-wrapper" 
+                                                        :columns="columnsWithValidation"
+                                                        :sms="entry"
+                                                        :active-row="activeRow">
+                            </tr>
+                        </tbody>
+                    </transition>
+                </table>
+            </div>
+        </div>
+    `
+});
+
+// sms-validation-wrapper
+Vue.component('sms-validation-wrapper', {
+    props: {
+        sms: Object,
+        activeRow: Number,
+        columns: Array
+    },
+    data: function () {
+        return {
+            import: true,
+            edit: false,
+            editSms: null
+        };
+    },
+    computed: {
+        Message: function () {
+            var vm = this;
+
+            return vm.sms.Message;
+        },
+        ContactNumber: function () {
+            var vm = this;
+
+            return vm.sms.ContactNumber;
+        },
+        Id: function () {
+            var vm = this;
+
+            return vm.sms.Id;
+        },
+        Count: function() {
+            var sms = this;
+
+            return sms.Message.length;
+        },
+        IsValid: function () {
+            var sms = this;
+
+            if (sms.Count > 150) { return false; };
+            if (sms.ContactNumber.length < 10) { return false; };
+
+            return true;
+        },
+        IsActive: function () {
+            var sms = this;
+
+            return sms.Id == sms.activeRow;
+        },
+        smsClass: function () {
+            var sms = this;
+
+            style = 'list-group-item';
+
+            if (sms.IsValid) {
+                style += ' list-group-item-success';
+            }
+            else {
+                style += ' list-group-item-danger';
+            }
+
+            return style;
+        }
+    },
+    methods: {
+        selectSms: function () {
+            var vm = this;
+
+            vm.setActiveSms(vm.sms.Id);
+        },
+        getValue: function (key) {
+            var sms = this;
+
+            return sms[key];
+        },
+        setEdit: function (value) {
+            var vm = this;
+
+            vm.edit = value;
+
+            if (value) {
+                vm.editSms = Object.assign({}, vm.sms);
+            }
+            else {
+                vm.editSms = null;
+            }
+        },
+        updateData: function () {
+            var vm = this;
+
+            vm.updateSms(vm.editSms);
+            vm.setEdit(false);
+        },
+        isOrigColumn: function (key) {
+            var vm = this;
+
+            return Object.keys(vm.sms).includes(key);
+        }
+    },
+    inject: ['setActiveSms', 'updateSms'],
+    template: `
+                <tr>                    
+                    <td style="vertical-align: middle; padding: 8px 0px;" scope="row">
+                        <div style="padding: 20px 0px; margin-left: 5px;" v-if="IsActive"  :class="[smsClass, 'clearfix']"></div>
+                    </td>
+                    <td v-for="key in columns" style="vertical-align: middle;">
+                        <div v-if="!edit" :class="smsClass" v-on:click="selectSms()">{{getValue(key)}}</div>
+                        <div v-if="edit"><textarea v-if="isOrigColumn(key)" v-model="editSms[key]" style="max-width: none; vertical-align:bottom;"></textarea></div>
+                    </td>
+                    <td style="vertical-align: middle;">
+                        <button v-if="IsActive && !edit" v-on:click="setEdit(true)">+</button>
+                        <button v-if="edit" v-on:click="setEdit(false)">x</button>
+                        <button v-if="edit" v-on:click="updateData()">v</button>
+                    </td>
+                </tr>
+    `
+});
+
 var app = new Vue({
     el: '#app',
     mixins: [connectionMethods],
@@ -740,14 +1022,19 @@ var app = new Vue({
         editMode: false,
         showButtons: false,
         showModal: {
-            showNewSmsSelectModal: false,
-            showNewSmsContactModal: false,
-            showNewSmsNumberModal: false,
-            showImportModal: false,
-            showComposeModal: false
+            NewSmsSelectModal: false,
+            NewSmsContactModal: false,
+            NewSmsNumberModal: false,
+            ImportModal: false,
+            ComposeModal: false,
+            ValidateModal: false
         },
         newSms: null,
-        sendStatus: null
+        sendStatus: null,
+        importdata: {
+            columns: [],
+            data: []
+        }
     },
     created: function () {
         this.startConnection();
@@ -767,7 +1054,7 @@ var app = new Vue({
 
         // Passen weergave SmsList items aan
         getSmsClass: function (sms) {
-            style = 'list-group-item';
+            style = 'list-group-item sms-list-item';
             if (sms.isActive) style += ' active';
             switch (sms.StatusName) {
                 case "Queued":
@@ -832,18 +1119,23 @@ var app = new Vue({
 
 
         // Modal pages
-        closedNewSmsSelectModal: function (selectedModal) {
-            this.showModal.showNewSmsSelectModal = false;
-            switch (selectedModal) {
-                case 'showNewSmsContactModal':
-                    this.showModal.showNewSmsContactModal = true;
-                    break;
-                case 'showNewSmsNumberModal':
-                    this.showModal.showNewSmsNumberModal = true;
-                    break;
+        showModalWindow: function (modalName) {
+            var vm = this;
+
+            var modals = Object.keys(vm.showModal);
+            if (modals.includes(modalName)) {
+                modals.forEach(m => { vm.showModal[m] = false; })
+                vm.showModal[modalName] = true;
             }
         },
+        openValidateModal: function (columns, data) {
+            var vm = this;
 
+            vm.importdata.columns = columns;
+            vm.importdata.data = data;
+
+            vm.showModalWindow('ValidateModal')
+        },
 
         // Send sms
         sendSelected: function () {
@@ -871,5 +1163,11 @@ var app = new Vue({
             this.smsList = this.smsList.filter(x => x.Id !== smsDTO.Id);
             this.currentSms = null;
         }
-    }
+    },
+    provide: function () {
+        return {
+            showModalWindow: this.showModalWindow,
+            openValidateModal: this.openValidateModal
+        };
+    },
 });

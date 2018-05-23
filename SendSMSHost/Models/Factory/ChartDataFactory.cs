@@ -8,9 +8,14 @@ using System.Web;
 
 namespace SendSMSHost.Models.Factory
 {
+    internal class Constants
+    {
+        internal const int BORDER_WIDTH = 1;
+        internal const string BORDER_COLOR = "#868E96";
+    }
+
     public interface IChartDataFactory
     {
-        ChartData CreateChartData(ISendSMSHostContext db);
         ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted);
     }
 
@@ -33,7 +38,7 @@ namespace SendSMSHost.Models.Factory
 
         // string of string[]
         [JsonProperty("backgroundColor")]
-        public object BackgroundColor { get; set; } 
+        public object BackgroundColor { get; set; }
 
         [JsonProperty("borderColor")]
         public string BorderColor { get; set; }
@@ -44,13 +49,12 @@ namespace SendSMSHost.Models.Factory
 
     public class ForeverChartDataFactory : IChartDataFactory
     {
-        public ChartData CreateChartData(ISendSMSHostContext db) { return CreateChartData(db, false); }
-
-        public ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted)
+        public ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted = false)
         {
             var lastLogs = db.Log
-                            .GroupBy(x => x.SmsId)
-                            .Select(y => y.OrderByDescending(z => z.Timestamp).FirstOrDefault());
+                             .GroupBy(x => x.SmsId)
+                             .Select(y => y.OrderByDescending(z => z.Timestamp)
+                             .FirstOrDefault());
 
             if (!includeDeleted)
             {
@@ -60,8 +64,8 @@ namespace SendSMSHost.Models.Factory
             DataSet dataSet = new DataSet()
             {
                 Label = "Forever",
-                BorderColor = "#868E96",
-                BorderWidth = 1
+                BorderColor = Constants.BORDER_COLOR,
+                BorderWidth = Constants.BORDER_WIDTH
             };
 
             var data = db.Status
@@ -90,8 +94,6 @@ namespace SendSMSHost.Models.Factory
 
     public class WeekChartDataFactory : IChartDataFactory
     {
-        public ChartData CreateChartData(ISendSMSHostContext db) { return CreateChartData(db, false); }
-
         public ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted)
         {
             List<DateTime> dateList = new List<DateTime>();
@@ -127,8 +129,8 @@ namespace SendSMSHost.Models.Factory
                                 Label = d.Label,
                                 Data = d.Data.ToArray(),
                                 BackgroundColor = d.BackgroundColor,
-                                BorderColor = "#868E96",
-                                BorderWidth = 1
+                                BorderColor = Constants.BORDER_COLOR,
+                                BorderWidth = Constants.BORDER_WIDTH
                             })
                             .ToArray();
 
@@ -145,8 +147,6 @@ namespace SendSMSHost.Models.Factory
     public class DayChartDataFactory : IChartDataFactory
     {
         const int INTERVAL_HOURS = 1;
-
-        public ChartData CreateChartData(ISendSMSHostContext db) { return CreateChartData(db, false); }
 
         public ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted)
         {
@@ -183,8 +183,8 @@ namespace SendSMSHost.Models.Factory
                                 Label = d.Label,
                                 Data = d.Data.ToArray(),
                                 BackgroundColor = d.BackgroundColor,
-                                BorderColor = "#868E96",
-                                BorderWidth = 1
+                                BorderColor = Constants.BORDER_COLOR,
+                                BorderWidth = Constants.BORDER_WIDTH
                             })
                             .ToArray();
 
@@ -201,8 +201,6 @@ namespace SendSMSHost.Models.Factory
     public class HourChartDataFactory : IChartDataFactory
     {
         const int INTERVAL_MINUTES = 5;
-
-        public ChartData CreateChartData(ISendSMSHostContext db) { return CreateChartData(db, false); }
 
         public ChartData CreateChartData(ISendSMSHostContext db, bool includeDeleted)
         {
@@ -243,8 +241,8 @@ namespace SendSMSHost.Models.Factory
                                 Label = d.Label,
                                 Data = d.Data.ToArray(),
                                 BackgroundColor = d.BackgroundColor,
-                                BorderColor = "#868E96",
-                                BorderWidth = 1
+                                BorderColor = Constants.BORDER_COLOR,
+                                BorderWidth = Constants.BORDER_WIDTH
                             })
                             .ToArray();
 

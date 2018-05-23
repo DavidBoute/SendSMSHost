@@ -78,7 +78,7 @@ namespace UnitTests
             IChartDataFactory summaryFactory = new ForeverChartDataFactory();
 
             // Act          
-            ChartData chartData = summaryFactory.CreateChartData(db);
+            ChartData chartData = summaryFactory.CreateChartData(db, includeDeleted: false);
 
             // Assert
             int expectedValue = 5;
@@ -94,7 +94,7 @@ namespace UnitTests
             IChartDataFactory summaryFactory = new ForeverChartDataFactory();
 
             // Act          
-            ChartData chartData = summaryFactory.CreateChartData(db);
+            ChartData chartData = summaryFactory.CreateChartData(db, includeDeleted: false);
 
             // Assert
             int expectedValue = 2;
@@ -110,7 +110,7 @@ namespace UnitTests
             IChartDataFactory summaryFactory = new ForeverChartDataFactory();
 
             // Act          
-            ChartData chartData = summaryFactory.CreateChartData(db);
+            ChartData chartData = summaryFactory.CreateChartData(db, includeDeleted: false);
 
             // Assert
             int expectedValue = 1;
@@ -126,7 +126,7 @@ namespace UnitTests
             IChartDataFactory summaryFactory = new ForeverChartDataFactory();
 
             // Act          
-            ChartData chartData = summaryFactory.CreateChartData(db);
+            ChartData chartData = summaryFactory.CreateChartData(db, includeDeleted: false);
 
             // Assert
             int expectedValue = 1;
@@ -142,7 +142,7 @@ namespace UnitTests
             IChartDataFactory summaryFactory = new ForeverChartDataFactory();
 
             // Act          
-            ChartData chartData = summaryFactory.CreateChartData(db);
+            ChartData chartData = summaryFactory.CreateChartData(db, includeDeleted: false);
 
             // Assert
             int expectedValue = 0;
@@ -158,7 +158,7 @@ namespace UnitTests
             IChartDataFactory summaryFactory = new ForeverChartDataFactory();
 
             // Act          
-            ChartData chartData = summaryFactory.CreateChartData(db);
+            ChartData chartData = summaryFactory.CreateChartData(db, includeDeleted: false);
 
             // Assert
             int expectedValue = 0;
@@ -169,11 +169,13 @@ namespace UnitTests
 
         public int CountStatusInDataset(ChartData chartData, string statusName)
         {
+            int statusIndex = chartData.Labels.ToList().IndexOf(statusName);
+
             return chartData
                         .Datasets
-                        .FirstOrDefault(x => x.Label == statusName)
+                        .First()
                         .Data
-                        .Sum();
+                        .ElementAt(statusIndex);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿var apiURL = '/api/'
+﻿var apiURL = '/api/';
 
 // line-chart
 Vue.component('bar-chart', {
@@ -6,9 +6,9 @@ Vue.component('bar-chart', {
     mixins: [VueChartJs.mixins.reactiveProp],
     props: ['options'],
     mounted() {
-        this.renderChart(this.chartData, this.options)
-    },
-})
+        this.renderChart(this.chartData, this.options);
+    }
+});
 
 // pie-chart
 Vue.component('pie-chart', {
@@ -16,9 +16,9 @@ Vue.component('pie-chart', {
     mixins: [VueChartJs.mixins.reactiveProp],
     props: ['options'],
     mounted() {
-        this.renderChart(this.chartData, this.options)
-    },
-})
+        this.renderChart(this.chartData, this.options);
+    }
+});
 
 
 var app = new Vue({
@@ -36,7 +36,7 @@ var app = new Vue({
                 yAxes: [{
                     ticks: {
                         beginAtZero: true,
-                        suggestedMax: 10,
+                        suggestedMax: 10
                     },
                     gridLines: {
                         display: true
@@ -70,7 +70,7 @@ var app = new Vue({
             this.requestWeekChartData(includeDeleted);
             this.requestDayChartData(includeDeleted);
             this.requestHourChartData(includeDeleted);
-        },
+        }
         
     },
     watch: {
