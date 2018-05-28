@@ -1,5 +1,6 @@
 ﻿using FluentScheduler;
 using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.AspNet.SignalR;
 using System.Diagnostics;
 using System.Web.Http;
 using System.Web.Mvc;

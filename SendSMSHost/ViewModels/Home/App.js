@@ -229,7 +229,7 @@ Vue.component('modal-import', {
         selectedFieldsChanged: function (data) {
             this.selectedFields = data;
         },
-        importeerSms: function () {
+        valideerSms: function () {
             var vm = this;
             for (key in vm.selectedFields) {
                 if (vm.selectedFields[key] === "") {
@@ -252,8 +252,6 @@ Vue.component('modal-import', {
 
                 smsImportData.push(sms);
             });
-
-            //app.requestCreateSmsBulk(smsImportData);
 
             var fieldsArray = Object.keys(vm.selectedFields);
 
@@ -300,7 +298,7 @@ Vue.component('modal-import', {
 
                         <div class ="modal-footer">
                             <slot name="footer">
-                                <button class ="btn btn-primary" v-on:click="importeerSms">Import</button>
+                                <button class ="btn btn-primary" v-on:click="valideerSms">Import</button>
                                 <button class ="btn btn-primary" v-on:click="$emit('close','cancel')">Cancel</button>
                             </slot>
                         </div>
@@ -379,7 +377,7 @@ Vue.component('modal-compose', {
             return html.replace(/(<([^>]+)>)/ig, "");
         },
 
-        importeerSms: function () {
+        valideerSms: function () {
             var vm = this;
 
             var columns = vm.worksheetData.columnNames;
@@ -419,7 +417,6 @@ Vue.component('modal-compose', {
                 smsImportData.push(sms);
             });
 
-            //app.requestCreateSmsBulk(smsImportData);
 
             var fieldsArray = ['Message', ...Object.keys(vm.selectedFields)];
 
@@ -489,7 +486,7 @@ Vue.component('modal-compose', {
 
                         <div class ="modal-footer">
                             <slot name="footer">
-                                <button class ="btn btn-primary" v-on:click="importeerSms">Import</button>
+                                <button class ="btn btn-primary" v-on:click="valideerSms">Import</button>
                                 <button class ="btn btn-primary" v-on:click="$emit('close','cancel')">Cancel</button>
                             </slot>
                         </div>
@@ -509,22 +506,41 @@ Vue.component('modal-validate', {
     data: function () {
         return {
             data: Array,
-            columns: Array
+            columns: Array,
+            smsToImport: []
         };
     },
     inject: [
         'showModalWindow'
     ],
     methods: {
-        importeerSms: function () {
-            //app.requestCreateSmsBulk(smsImportData);
+        importeerSms: function (smsImportData) {
+            app.requestCreateSmsBulk(smsImportData);
 
             this.$emit('close');
+        },
+        getIsReadyToImport: function (sms) {
+            var vm = this;
+
+            return vm.smsToImport.includes(sms);
+        },
+        setIsReadyToImport: function (sms, isImport) {
+            var vm = this;
+
+            if (isImport && !vm.getIsReadyToImport(sms)) {
+                vm.smsToImport.push(sms);
+            }
+            else if (!isImport && vm.getIsReadyToImport(sms)) {
+                vm.smsToImport = vm.smsToImport.filter(x => x != sms);
+            }
         }
     },
     provide: function () {
         return {
-            openModalValidate: this.openModalValidate
+            openModalValidate: this.openModalValidate,
+            smsToImport: this.smsToImport,
+            getIsReadyToImport: this.getIsReadyToImport,
+            setIsReadyToImport: this.setIsReadyToImport
         };
     },
     template: `
@@ -540,7 +556,9 @@ Vue.component('modal-validate', {
 
                         <div class ="modal-body">
                             <slot name="body">
-                                <edit-bulk-sms :columns="importdata.columns" :data="importdata.data" :tableCaption="'Controleer de berichten'"></edit-bulk-sms> 
+                                <edit-bulk-sms  :columns="importdata.columns" 
+                                                :data="importdata.data" 
+                                                :tableCaption="'Controleer de berichten'"></edit-bulk-sms> 
                             </slot>
                         </div>
 
@@ -830,7 +848,7 @@ Vue.component('edit-bulk-sms', {
     },
     data: function () {
         return {
-            activeRow: -1
+            activeRow: -1,
         };
     },
     computed: {
@@ -840,23 +858,23 @@ Vue.component('edit-bulk-sms', {
         columnsWithValidation: function () {
             var vm = this;
 
-            return vm.addValidationColumns(vm.columns);
+            return [...vm.columns, 'Count', 'IsValid', 'IsImport'];
         },
     },
     methods: {
-        addValidationColumns: function (columns) {
-            return [ ...columns, 'Count', 'IsValid', 'Import'];
-        },
         setActiveSms: function (rowIndex) {
             var vm = this;
 
             vm.activeRow = rowIndex;
         },
-        updateSms: function (updatedSms) {
+        updateSms: function (oldSms, updatedSms) {
             var vm = this;
 
-            Vue.set(vm.data, updatedSms.Id, updatedSms);
-        }
+            var changedSms = vm.data[oldSms.Id];
+            for (var k in changedSms) changedSms[k] = updatedSms[k];
+
+            Vue.set(vm.data, updatedSms.Id, changedSms);
+        },
     },
     provide: function () {
         return {
@@ -898,13 +916,12 @@ Vue.component('sms-validation-wrapper', {
     props: {
         sms: Object,
         activeRow: Number,
-        columns: Array
+        columns: Array,
     },
     data: function () {
         return {
-            import: true,
-            edit: false,
-            editSms: null
+            isEdit: false,
+            editSms: null  
         };
     },
     computed: {
@@ -954,6 +971,12 @@ Vue.component('sms-validation-wrapper', {
             }
 
             return style;
+        },
+        IsImport: function ()
+        {
+            var vm = this;
+
+            return vm.getIsReadyToImport(vm.sms);
         }
     },
     methods: {
@@ -970,10 +993,10 @@ Vue.component('sms-validation-wrapper', {
         setEdit: function (value) {
             var vm = this;
 
-            vm.edit = value;
+            vm.isEdit = value;
 
             if (value) {
-                vm.editSms = Object.assign({}, vm.sms);
+                vm.editSms = Object.assign({}, vm.sms, { IsImport: vm.IsImport });
             }
             else {
                 vm.editSms = null;
@@ -982,29 +1005,39 @@ Vue.component('sms-validation-wrapper', {
         updateData: function () {
             var vm = this;
 
-            vm.updateSms(vm.editSms);
+            vm.updateSms(vm.sms, vm.editSms);
+            vm.setIsReadyToImport(vm.sms, vm.editSms.IsImport);
             vm.setEdit(false);
         },
-        isOrigColumn: function (key) {
+        isEditColumn: function (key) {
             var vm = this;
 
             return Object.keys(vm.sms).includes(key);
-        }
+        },
+        isCheckboxColumn: function (key) {
+            var vm = this;
+
+            return key == "IsImport";
+        }  
     },
-    inject: ['setActiveSms', 'updateSms'],
+    inject: ['setActiveSms', 'updateSms', 'setIsReadyToImport', 'getIsReadyToImport'],
     template: `
                 <tr>                    
                     <td style="vertical-align: middle; padding: 8px 0px;" scope="row">
                         <div style="padding: 20px 0px; margin-left: 5px;" v-if="IsActive"  :class="[smsClass, 'clearfix']"></div>
                     </td>
                     <td v-for="key in columns" style="vertical-align: middle;">
-                        <div v-if="!edit" :class="smsClass" v-on:click="selectSms()">{{getValue(key)}}</div>
-                        <div v-if="edit"><textarea v-if="isOrigColumn(key)" v-model="editSms[key]" style="max-width: none; vertical-align:bottom;"></textarea></div>
+                        <div v-if="!isEdit" :class="smsClass" v-on:click="selectSms()">{{getValue(key)}}</div>
+                        <div v-if="isEdit">
+                            <textarea v-if="isEditColumn(key)" v-model="editSms[key]" style="max-width: none; vertical-align:bottom;"></textarea>
+                            <label class="checkboxContainer" v-if="isCheckboxColumn(key)"><input type="checkbox" v-model="editSms.IsImport"><span class="checkmark"></span></label>
+                        </div>
+
                     </td>
                     <td style="vertical-align: middle;">
-                        <button v-if="IsActive && !edit" v-on:click="setEdit(true)">+</button>
-                        <button v-if="edit" v-on:click="setEdit(false)">x</button>
-                        <button v-if="edit" v-on:click="updateData()">v</button>
+                        <button v-if="IsActive && !isEdit" v-on:click="setEdit(true)">+</button>
+                        <button v-if="isEdit" v-on:click="setEdit(false)">x</button>
+                        <button v-if="isEdit" v-on:click="updateData()">v</button>
                     </td>
                 </tr>
     `
