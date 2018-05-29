@@ -468,7 +468,7 @@ Vue.component('modal-compose', {
                                                     <div class="panel-heading clearfix">Template</div>
                                                     <textarea v-model="textboxText" v-if="worksheetData.columnNames"
                                                                 class="form-control input-md panel-body"
-                                                                style="max-width: 100%; min-height: 100px;"></textarea>
+                                                                style="min-height: 100px;"></textarea>
                                                     <div class="panel-footer">
                                                         Gebruik de naam van een kolom tussen $-tekens om data in te voegen.
                                                     </div>
@@ -499,7 +499,7 @@ Vue.component('modal-compose', {
 
 // modal-validate
 Vue.component('modal-validate', {
-    props:  {
+    props: {
         show: Boolean,
         importdata: null
     },
@@ -514,7 +514,11 @@ Vue.component('modal-validate', {
         'showModalWindow'
     ],
     methods: {
-        importeerSms: function (smsImportData) {
+        importeerSms: function () {
+            var vm = this;
+
+            var smsImportData = vm.smsToImport;
+
             app.requestCreateSmsBulk(smsImportData);
 
             this.$emit('close');
@@ -758,7 +762,7 @@ Vue.component('select-fields', {
                 <div class="h4" style="margin-top: 0px">{{caption}}</div>
                     <div v-for="field in Object.keys(importfields)" class ="form-group form-col" style="margin-right: 20px">
                         <label>{{field}}</label>
-                        <select class ="form-control" v-model="importfields[field]" v-on:change="selectedFieldsChanged">
+                        <select class ="form-control fixed-width" v-model="importfields[field]" v-on:change="selectedFieldsChanged">
                             <option disabled value="">Kies een kolom</option>
                             <option v-for="key in columns" :value="key">{{key}}</option>
                         </select>
@@ -781,7 +785,7 @@ Vue.component('linked-textbox', {
         'convertTemplateToHTML',
         'getSmsContentFromHtml'
     ],
-    data: function() {
+    data: function () {
         return {
             rowIndex: 0
         };
@@ -818,7 +822,7 @@ Vue.component('linked-textbox', {
             if (newIndex >= 0 && newIndex < vm.data.length) {
                 vm.rowIndex = newIndex;
             }
-        }       
+        }
     },
     template: `
             <div class="panel panel-default">
@@ -921,7 +925,7 @@ Vue.component('sms-validation-wrapper', {
     data: function () {
         return {
             isEdit: false,
-            editSms: null  
+            editSms: null
         };
     },
     computed: {
@@ -940,7 +944,7 @@ Vue.component('sms-validation-wrapper', {
 
             return vm.sms.Id;
         },
-        Count: function() {
+        Count: function () {
             var sms = this;
 
             return sms.Message.length;
@@ -972,8 +976,7 @@ Vue.component('sms-validation-wrapper', {
 
             return style;
         },
-        IsImport: function ()
-        {
+        IsImport: function () {
             var vm = this;
 
             return vm.getIsReadyToImport(vm.sms);
@@ -1018,7 +1021,7 @@ Vue.component('sms-validation-wrapper', {
             var vm = this;
 
             return key == "IsImport";
-        }  
+        }
     },
     inject: ['setActiveSms', 'updateSms', 'setIsReadyToImport', 'getIsReadyToImport'],
     template: `
@@ -1026,11 +1029,11 @@ Vue.component('sms-validation-wrapper', {
                     <td style="vertical-align: middle; padding: 8px 0px;" scope="row">
                         <div style="padding: 20px 0px; margin-left: 5px;" v-if="IsActive"  :class="[smsClass, 'clearfix']"></div>
                     </td>
-                    <td v-for="key in columns" style="vertical-align: middle;">
+                    <td v-for="key in columns" class="align-middle">
                         <div v-if="!isEdit" :class="smsClass" v-on:click="selectSms()">{{getValue(key)}}</div>
                         <div v-if="isEdit">
-                            <textarea v-if="isEditColumn(key)" v-model="editSms[key]" style="max-width: none; vertical-align:bottom;"></textarea>
-                            <label class="checkboxContainer" v-if="isCheckboxColumn(key)"><input type="checkbox" v-model="editSms.IsImport"><span class="checkmark"></span></label>
+                            <textarea v-if="isEditColumn(key)" v-model="editSms[key]" class="align-bottom max-width"></textarea>
+                            <label class="checkboxContainer align-middle" v-if="isCheckboxColumn(key)"><input type="checkbox" v-model="editSms.IsImport"><span class="checkmark"></span></label>
                         </div>
 
                     </td>
@@ -1043,6 +1046,122 @@ Vue.component('sms-validation-wrapper', {
     `
 });
 
+// edit-sms-form
+Vue.component('edit-sms-form', {
+    props: {
+        selectedSms: Object,
+        statusList: Array,
+        contactList: Array
+    },
+    data: function () {
+        return {
+            editMode: false
+        }
+    },
+    computed: {
+        editableSms: function () {
+            var vm = this;
+
+            return Object.assign({}, vm.selectedSms);
+        },
+        showContactField: function () {
+            var vm = this;
+
+            return vm.editMode || vm.editableSms.ContactIsNotAnonymous;
+        }
+    },
+    methods: {
+        showEditMode: function () {
+            var vm = this;
+
+            vm.editMode = true;
+        },
+        hideEditMode: function () {
+            var vm = this;
+
+            vm.editMode = false;
+        },
+        saveEdit: function () {
+            var vm = this;
+
+            app.requestEditSms(vm.editableSms);
+            vm.hideEditMode();
+        },
+        deleteSms: function () {
+            var vm = this;
+
+            app.requestDeleteSms(vm.editableSms);
+            vm.hideEditMode();
+        },
+        editableSmsSelectedContactChanged: function (contactId) {
+            var vm = this;
+
+            var selectedContact = vm.contactList.filter(x => x.Id === contactId)[0];
+            vm.editableSms.ContactFirstName = selectedContact.FirstName;
+            vm.editableSms.ContactLastName = selectedContact.LastName;
+            vm.editableSms.ContactNumber = selectedContact.Number;
+            vm.editableSms.ContactIsNotAnonymous = !selectedContact.IsAnonymous;
+        },
+        editableSmsSelectedStatusChanged: function (statusId) {
+            var vm = this;
+
+            var selectedStatus = vm.statusList.filter(x => x.Id === statusId)[0];
+
+            vm.editableSms.StatusName = selectedStatus.Name;
+        }
+    },
+    template: `
+        <div class="container">
+            <div class="panel panel-primary">
+                <div class="panel-heading"><strong>Details</strong></div>
+                <div class="panel-body" >
+                    <div class="form-group" >
+                        <label v-if="showContactField">Contact:</label>
+                        <select v-model="editableSms.ContactId" class="form-control"
+                                v-on:change="editableSmsSelectedContactChanged(editableSms.ContactId)"
+                                v-if="showContactField"
+                                :disabled="!editMode">
+                            <option v-for="contact in contactList"
+                                    v-bind:value="contact.Id">
+                                {{ contact.FirstName + ' ' + contact.LastName }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group" >
+                        <label>Nummer:</label>
+                        <input v-model="editableSms.ContactNumber" class="form-control" :disabled="!editMode">
+                    </div>
+                    <div class="form-group" >
+                        <label>Bericht:</label>
+                        <textarea v-model="editableSms.Message" class="form-control" style="min-height: 100px" :disabled="!editMode"> </textarea>
+                    </div>
+                    <div class="form-group" >
+                        <label>Status:</label>
+                        <select v-model="editableSms.StatusId" class="form-control"
+                                v-on:change="editableSmsSelectedStatusChanged(editableSms.StatusId)"
+                                :disabled="!editMode">
+                            <option v-for="status in statusList"
+                                    v-bind:value="status.Id">
+                                {{ status.Name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="pull-right">
+                        <button v-on:click="saveEdit()" class="btn btn-primary" v-if="editMode">Save</button>
+                        <button v-on:click="showEditMode()" class="btn btn-primary" v-else>Edit</button>
+
+                        <button v-on:click="hideEditMode()" class="btn btn-primary" v-if="editMode">Cancel</button>
+                        <button v-on:click="deleteSms()" class="btn btn-danger" v-else>Delete</button>
+                    </div>
+                    
+
+                </div>
+            </div>
+        </div>
+  `
+});
+
+// main viewmodel
 var app = new Vue({
     el: '#app',
     mixins: [connectionMethods],
@@ -1052,7 +1171,6 @@ var app = new Vue({
         contactList: null,
         statusList: null,
         currentSms: null,
-        editMode: false,
         showButtons: false,
         showModal: {
             NewSmsSelectModal: false,
@@ -1106,7 +1224,7 @@ var app = new Vue({
             return style;
         },
         getShortenedMessage: function (text) {
-            var desiredLength = 20;
+            var desiredLength = 30;
             if (text.length <= desiredLength) {
                 return text;
             }
@@ -1123,33 +1241,16 @@ var app = new Vue({
             this.currentSms = Object.assign({}, sms); // shallow copy ipv pointer
             this.currentSms.ContactIsNotAnonymous = this.currentSms.ContactFirstName !== null
                 || this.currentSms.ContactLastName !== null;
-            this.hideEditMode();
         },
+        getFullContactName: function (sms) {
+            var vm = this;
 
-        // Edit mode
-        showEditMode: function () {
-            this.editMode = true;
-        },
-        hideEditMode: function () {
-            this.editMode = false;
-        },
-        saveEdit: function () {
-            this.requestEditSms(this.currentSms);
-            this.hideEditMode();
-        },
-        currentSmsSelectedContactChanged: function (contactId) {
-            selectedContact = this.contactList.filter(x => x.Id === contactId)[0];
-            this.currentSms.ContactFirstName = selectedContact.FirstName;
-            this.currentSms.ContactLastName = selectedContact.LastName;
-            this.currentSms.ContactNumber = selectedContact.Number;
-            this.currentSms.ContactIsNotAnonymous = !selectedContact.IsAnonymous;
-        },
-        currentSmsSelectedStatusChanged: function (statusId) {
-            selectedStatus = this.statusList.filter(x => x.Id === statusId)[0];
+            if (sms.ContactFirstName != null && sms.ContactLastName != null) {
+                return sms.ContactFirstName + ' ' + sms.ContactLastName + ' ';
+            }
 
-            this.currentSms.StatusName = selectedStatus.Name;
+            return ""         
         },
-
 
         // Modal pages
         showModalWindow: function (modalName) {
