@@ -1110,6 +1110,13 @@ Vue.component('edit-sms-form', {
             vm.editableSms.StatusName = selectedStatus.Name;
         }
     },
+    watch: {
+        'editableSms.StatusId': function (newVal, oldVal) {
+            var vm = this;
+
+            vm.editableSmsSelectedStatusChanged(newVal);
+        }
+    },
     template: `
         <div class="container">
             <div class="panel panel-primary">
@@ -1118,7 +1125,6 @@ Vue.component('edit-sms-form', {
                     <div class="form-group" >
                         <label v-if="showContactField">Contact:</label>
                         <select v-model="editableSms.ContactId" class="form-control"
-                                v-on:change="editableSmsSelectedContactChanged(editableSms.ContactId)"
                                 v-if="showContactField"
                                 :disabled="!editMode">
                             <option v-for="contact in contactList"
@@ -1249,7 +1255,7 @@ var app = new Vue({
                 return sms.ContactFirstName + ' ' + sms.ContactLastName + ' ';
             }
 
-            return ""         
+            return ""
         },
 
         // Modal pages
@@ -1285,12 +1291,13 @@ var app = new Vue({
         },
         changeSms: function (smsDTO) {
             smsIndex = this.smsList.findIndex(s => s.Id === smsDTO.Id);
-            this.smsList[smsIndex] = smsDTO;
+
+            Vue.set(this.smsList, smsIndex, smsDTO);
 
             if (this.currentSms !== null
                 && this.currentSms.Id === smsDTO.Id) {
-                this.currentSms = smsDTO;
-                this.smsList.filter(x => x.Id === smsDTO.Id)[0].isActive = true;
+                this.selectSms(smsDTO);
+                //this.smsList.filter(x => x.Id === smsDTO.Id)[0].isActive = true;
             }
         },
         removeSms: function (smsDTO) {

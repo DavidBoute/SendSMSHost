@@ -1,18 +1,12 @@
-﻿using AutoMapper;
-using FluentScheduler;
+﻿using FluentScheduler;
 using Microsoft.AspNet.SignalR;
-using Microsoft.AspNet.SignalR.Hubs;
 using SendSMSHost.Models;
 using SendSMSHost.SignalR;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Web;
-using System.Web.Caching;
 using System.Web.Hosting;
 
 namespace SendSMSHost
@@ -97,14 +91,15 @@ namespace SendSMSHost
                                 {
                                     sms.Status = statusQueued;
                                     sms.TimeStamp = DateTime.Now;
-                                    SmsDTO smsDTO = Mapper.Map<SmsDTO>(sms);
+                                    SmsDTO smsDTO = new SmsDTO(sms);
 
                                     try
                                     {
                                         db.SaveChanges();
 
                                         ServerSentEventsHub.NotifyChange(_signalRContext,
-                                            new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
+                                                                         smsDTO: smsDTO,
+                                                                         operation: "PUT");
                                     }
                                     catch (Exception ex)
                                     {
@@ -229,10 +224,13 @@ namespace SendSMSHost
                                     db.SaveChanges();
                                     Debug.WriteLine($"[{DateTime.Now}] Created {importSmsCount} new sms");
 
+
                                     foreach (Sms s in smsToImportList)
                                     {
+                                        SmsDTO smsDTO = new SmsDTO(s);
                                         ServerSentEventsHub.NotifyChange(_signalRContext,
-                                            new SmsDTOWithOperation { SmsDTO = Mapper.Map<SmsDTO>(s), Operation = "POST" });
+                                                                        smsDTO: smsDTO, 
+                                                                        operation: "POST");
                                     }
                                 }
                                 catch (Exception ex)

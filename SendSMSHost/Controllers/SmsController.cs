@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Microsoft.AspNet.SignalR;
+﻿using Microsoft.AspNet.SignalR;
 using SendSMSHost.Models;
 using SendSMSHost.SignalR;
 using System;
@@ -22,7 +20,7 @@ namespace SendSMSHost.Controllers
         // GET: api/Sms
         public IQueryable<SmsDTO> GetSms()
         {
-            var smsList = db.Sms.OrderBy(x => x.TimeStamp).ProjectTo<SmsDTO>();
+            var smsList = db.Sms.OrderBy(x => x.TimeStamp).Select(x => new SmsDTO(x));
 
             return smsList;
         }
@@ -31,7 +29,7 @@ namespace SendSMSHost.Controllers
         [ResponseType(typeof(SmsDTO))]
         public async Task<IHttpActionResult> GetSms(Guid id)
         {
-            var sms = await db.Sms.ProjectTo<SmsDTO>()
+            var sms = await db.Sms.Select(x => new SmsDTO(x))
                 .SingleOrDefaultAsync(x => x.Id == id.ToString());
 
             if (sms == null)
@@ -51,7 +49,7 @@ namespace SendSMSHost.Controllers
                 return BadRequest(ModelState);
             }
 
-            Sms sms = Mapper.Map<Sms>(smsDTO);
+            Sms sms = new Sms(smsDTO);
             db.Set<Sms>().Attach(sms);
             db.Entry(sms).State = EntityState.Modified;
 
@@ -60,7 +58,8 @@ namespace SendSMSHost.Controllers
                 await db.SaveChangesAsync();
 
                 ServerSentEventsHub.NotifyChange(_signalRContext,
-                    new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "PUT" });
+                                                smsDTO: smsDTO,
+                                                operation: "PUT");
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -118,7 +117,7 @@ namespace SendSMSHost.Controllers
                 smsDTO.ContactLastName = contact.LastName;
             }
 
-            Sms sms = Mapper.Map<Sms>(smsDTO);
+            Sms sms = new Sms(smsDTO);
 
             sms.Id = Guid.NewGuid();
             sms.TimeStamp = DateTime.Now;
@@ -129,11 +128,12 @@ namespace SendSMSHost.Controllers
             {
                 await db.SaveChangesAsync();
 
-                smsDTO = await db.Sms.ProjectTo<SmsDTO>()
+                smsDTO = await db.Sms.Select(x => new SmsDTO(x))
                     .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString());
 
                 ServerSentEventsHub.NotifyChange(_signalRContext,
-                    new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "POST" });
+                                                smsDTO: smsDTO,
+                                                operation: "POST");
             }
             catch (DbUpdateException)
             {
@@ -167,18 +167,15 @@ namespace SendSMSHost.Controllers
 
             db.Sms.Remove(sms);
 
-            SmsDTO smsDTO = Mapper.Map<SmsDTO>
-            (
-                await db.Sms.ProjectTo<SmsDTO>()
-                    .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString())
-            );
+            SmsDTO smsDTO = new SmsDTO(sms);
 
             try
             {
                 await db.SaveChangesAsync();
 
                 ServerSentEventsHub.NotifyChange(_signalRContext,
-                    new SmsDTOWithOperation { SmsDTO = smsDTO, Operation = "DELETE" });
+                                                smsDTO: smsDTO,
+                                                operation: "DELETE");
             }
             catch (Exception ex)
             {

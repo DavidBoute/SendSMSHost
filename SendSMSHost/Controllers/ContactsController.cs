@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using SendSMSHost.Models;
+using System;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
-using SendSMSHost.Models;
-using AutoMapper.QueryableExtensions;
+
 
 namespace SendSMSHost.Controllers
 {
@@ -21,7 +19,8 @@ namespace SendSMSHost.Controllers
         // GET: api/Contacts
         public IQueryable<ContactDTO> GetContacts()
         {
-            var contact = db.Contacts.ProjectTo<ContactDTO>();
+            var contact = db.Contacts
+                            .Select(x=>new ContactDTO(x));
 
             return contact;
         }
@@ -30,7 +29,7 @@ namespace SendSMSHost.Controllers
         [ResponseType(typeof(Contact))]
         public async Task<IHttpActionResult> GetContact(Guid id)
         {
-            var contact = await db.Contacts.ProjectTo<ContactDTO>()
+            var contact = await db.Contacts.Select(x => new ContactDTO(x))
                 .SingleOrDefaultAsync(x => x.Id == id.ToString());
 
             if (contact == null)

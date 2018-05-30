@@ -1,5 +1,4 @@
-﻿using AutoMapper.QueryableExtensions;
-using SendSMSHost.Models;
+﻿using SendSMSHost.Models;
 using System.Data;
 using System.Data.Entity;
 using System.Linq;
@@ -16,7 +15,9 @@ namespace SendSMSHost.Controllers
         // GET: api/Status
         public IQueryable<StatusDTO> GetStatus()
         {
-            var statusList = db.Status.OrderBy(x => x.Id).ProjectTo<StatusDTO>();
+            var statusList = db.Status
+                            .OrderBy(x => x.Id)
+                            .Select(x=> new StatusDTO(x));
             return statusList;
         }
 
@@ -24,7 +25,7 @@ namespace SendSMSHost.Controllers
         [ResponseType(typeof(StatusDTO))]
         public async Task<IHttpActionResult> GetStatus(int id)
         {
-            var status = await db.Status.ProjectTo<StatusDTO>()
+            var status = await db.Status.Select(x => new StatusDTO(x))
                 .SingleOrDefaultAsync(x => x.Id == id);
 
             if (status == null)

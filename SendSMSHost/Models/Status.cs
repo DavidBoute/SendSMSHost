@@ -19,5 +19,14 @@ namespace SendSMSHost.Models
         public string DefaultColorHex { get; set; }
 
         public virtual ICollection<Sms> Sms { get; set; }
+
+        public static Status FindStatusById(int Id)
+        {
+            using (SendSMSHostContext db = new SendSMSHostContext())
+            {
+                Status status = db.Status.First(x => x.Id == Id);
+                return status;
+            }
+        }
     }
 }

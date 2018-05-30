@@ -21,8 +21,6 @@ namespace SendSMSHost
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
 
-            App_Start.AutoMapperConfig.Initialize();
-
             JobManager.Initialize(new ScheduledTask.TaskRegistry());
         }
 
