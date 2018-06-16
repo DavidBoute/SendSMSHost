@@ -228,6 +228,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\SmsProcessingHelper.cs" />
     <Compile Include="Migrations\201803281918166_initial.cs" />
     <Compile Include="Migrations\201803281918166_initial.Designer.cs">
       <DependentUpon>201803281918166_initial.cs</DependentUpon>
@@ -239,6 +240,10 @@
     <Compile Include="Migrations\201804141502595_IndexLog.cs" />
     <Compile Include="Migrations\201804141502595_IndexLog.Designer.cs">
       <DependentUpon>201804141502595_IndexLog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201806161248382_expliciete_FK_verwijderd.cs" />
+    <Compile Include="Migrations\201806161248382_expliciete_FK_verwijderd.Designer.cs">
+      <DependentUpon>201806161248382_expliciete_FK_verwijderd.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Contact.cs" />
@@ -378,6 +383,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201804141502595_IndexLog.resx">
       <DependentUpon>201804141502595_IndexLog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201806161248382_expliciete_FK_verwijderd.resx">
+      <DependentUpon>201806161248382_expliciete_FK_verwijderd.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

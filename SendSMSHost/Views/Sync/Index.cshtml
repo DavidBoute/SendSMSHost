@@ -3,26 +3,33 @@
     ViewBag.Title = "Index";
 }
 
-<h2>Index</h2>
-<table>
-    <tr>
-        <td>Prefix:</td>
-        <td>@Model.Prefix</td>
-    </tr>
-    <tr>
-        <td>Host:</td>
-        <td>@Model.Host</td>
-    </tr>
-    <tr>
-        <td>Port:</td>
-        <td>@Model.Port</td>
-    </tr>
-    <tr>
-        <td>Path:</td>
-        <td>@Model.Path</td>
-    </tr>
-    <tr>
-        <td>QR code:</td>
-        <td><img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.ImageByteArray))" height="300" width="300"/></td>
-    </tr>
-</table>
+<div class="container" style="margin-top: 20px">
+    <div class="panel panel-primary">
+        <div class="panel-heading"><strong>Connection details</strong></div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label>Prefix:</label>
+                <div class="form-control">@Model.Prefix</div>
+            </div>
+            <div class="form-group">
+                <label>Host:</label>
+                <div class="form-control">@Model.Host</div>
+            </div>
+            <div class="form-group">
+                <label>Port:</label>
+                <div class="form-control">@Model.Port</div>
+            </div>
+            <div class="form-group">
+                <label>Path:</label>
+                <div class="form-control">@Model.Path</div>
+            </div>
+            <div class="form-group">
+                <label>QR-code:</label>
+                <div>
+                    <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.ImageByteArray))" height="300" width="300" />
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

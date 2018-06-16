@@ -214,9 +214,33 @@ Vue.component('modal-import', {
             },
             selectedFields: {
                 Message: '',
-                ContactNumber: ''
-            }
+                ContactNumber: '',
+                FirstName: '',
+                LastName: ''
+            },
+            importContacts: true
         };
+    },
+    computed:{
+        passedFields: function (){
+            var vm = this;
+            var passedFields;
+
+            if (vm.importContacts) {
+                passedFields = Object.assign({},vm.selectedFields);
+            }
+            else {
+                // TODO: velden dynamisch maken
+
+                passedFields = {
+                    Message: vm.selectedFields.Message,
+                    ContactNumber: vm.selectedFields.ContactNumber
+                }
+            }
+
+            return passedFields;
+
+        }
     },
     inject: [
         'showModalWindow',
@@ -227,12 +251,12 @@ Vue.component('modal-import', {
             this.worksheetData = data;
         },
         selectedFieldsChanged: function (data) {
-            this.selectedFields = data;
+            this.selectedFields = Object.assign(this.selectedFields, data);
         },
         valideerSms: function () {
             var vm = this;
-            for (key in vm.selectedFields) {
-                if (vm.selectedFields[key] === "") {
+            for (key in vm.passedFields) {
+                if (vm.passedFields[key] === "") {
                     alert('Maak een selectie: ' + key);
                     return;
                 }
@@ -242,8 +266,8 @@ Vue.component('modal-import', {
             var index = 0;
             vm.worksheetData.json.forEach(element => {
                 var sms = {};
-                for (key in vm.selectedFields) {
-                    var field = vm.selectedFields[key];
+                for (key in vm.passedFields) {
+                    var field = vm.passedFields[key];
                     sms[key] = element[field];
                 }
 
@@ -253,7 +277,7 @@ Vue.component('modal-import', {
                 smsImportData.push(sms);
             });
 
-            var fieldsArray = Object.keys(vm.selectedFields);
+            var fieldsArray = Object.keys(vm.passedFields);
 
             vm.openValidateModal(fieldsArray, smsImportData);
 
@@ -270,7 +294,7 @@ Vue.component('modal-import', {
         <transition name="modal">
             <div class ="modal-mask" v-show="show">
                 <div class ="modal-wrapper">
-                    <div class ="modal-container">
+                    <div class ="modal-container scrollbar">
                         <div class ="modal-header h3">
                             <slot name="header">
                                 Importeer een spreadsheet:
@@ -282,16 +306,22 @@ Vue.component('modal-import', {
                                 <div>
                                     <file-upload :filename="worksheetData.fileName"></file-upload>
                                 </div>
-                                <div>
-                                    <preview-data :columns="worksheetData.columnNames" 
-                                                    :data="worksheetData.json" 
-                                                    :noRowsPreview="5" 
-                                                    :tableCaption="'Preview data'" ></preview-data>
-                                </div>
-                                <div>
-                                    <select-fields  :columns="worksheetData.columnNames" 
-                                                    :importfields="selectedFields" 
-                                                    :caption="'Koppel de velden om te importeren'"></select-fields>
+                                <div v-if="worksheetData.columnNames">
+                                    <div>
+                                        <preview-data :columns="worksheetData.columnNames" 
+                                                        :data="worksheetData.json" 
+                                                        :noRowsPreview="5" 
+                                                        :tableCaption="'Preview data'" ></preview-data>
+                                    </div>
+                                    <div>
+                                        <div class="form-check container-fluid">
+                                            <input type="checkbox" class="form-check-input" v-model="importContacts"></input>                                        
+                                            <label class="form-check-label">Importeer namen</label>    
+                                        </div>
+                                        <select-fields  :columns="worksheetData.columnNames" 
+                                                        :importfields="passedFields" 
+                                                        :caption="'Koppel de velden om te importeren'"></select-fields>
+                                    </div>
                                 </div>
                             </slot>
                         </div>
@@ -321,9 +351,33 @@ Vue.component('modal-compose', {
             },
             textboxText: '',
             selectedFields: {
-                ContactNumber: ''
-            }
+                ContactNumber: '',
+                FirstName: '',
+                LastName: ''
+            },
+            importContacts: true
         };
+    },
+    computed: {
+        passedFields: function () {
+            var vm = this;
+            var passedFields;
+
+            if (vm.importContacts) {
+                passedFields = Object.assign({}, vm.selectedFields);
+            }
+            else {
+                // TODO: velden dynamisch maken
+
+                passedFields = {
+                    Message: vm.selectedFields.Message,
+                    ContactNumber: vm.selectedFields.ContactNumber
+                }
+            }
+
+            return passedFields;
+
+        }
     },
     inject: [
         'showModalWindow',
@@ -334,7 +388,7 @@ Vue.component('modal-compose', {
             this.worksheetData = data;
         },
         selectedFieldsChanged: function (data) {
-            this.selectedFields = data;
+            this.selectedFields = Object.assign({}, data);
         },
         getFieldValue: function (fieldName, record, columns) {
             var vm = this;
@@ -383,8 +437,8 @@ Vue.component('modal-compose', {
             var columns = vm.worksheetData.columnNames;
             var template = vm.textboxText;
 
-            for (key in vm.selectedFields) {
-                if (vm.selectedFields[key] === "") {
+            for (key in vm.passedFields) {
+                if (vm.passedFields[key] === "") {
                     alert('Maak een selectie: ' + key);
                     return;
                 }
@@ -404,8 +458,8 @@ Vue.component('modal-compose', {
             var index = 0;
             vm.worksheetData.json.forEach(element => {
                 var sms = {};
-                for (key in vm.selectedFields) {
-                    var field = vm.selectedFields[key];
+                for (key in vm.passedFields) {
+                    var field = vm.passedFields[key];
                     sms[key] = element[field];
                 }
 
@@ -418,7 +472,7 @@ Vue.component('modal-compose', {
             });
 
 
-            var fieldsArray = ['Message', ...Object.keys(vm.selectedFields)];
+            var fieldsArray = ['Message', ...Object.keys(vm.passedFields)];
 
             vm.openValidateModal(fieldsArray, smsImportData);
 
@@ -439,7 +493,7 @@ Vue.component('modal-compose', {
         <transition name="modal">
             <div class ="modal-mask" v-show="show">
                 <div class ="modal-wrapper">
-                    <div class ="modal-container">
+                    <div class ="modal-container scrollbar">
                         <div class ="modal-header h3">
                             <slot name="header">
                                 Importeer een spreadsheet:
@@ -451,18 +505,25 @@ Vue.component('modal-compose', {
 
                                     <file-upload :filename="worksheetData.fileName"></file-upload>
 
-                                    <preview-data :columns="worksheetData.columnNames" 
-                                                    :data="worksheetData.json" 
-                                                    :noRowsPreview="5" 
-                                                    :tableCaption="'Preview data'" ></preview-data>
+
+                                    <div v-if="worksheetData.columnNames">
+
+                                        <preview-data :columns="worksheetData.columnNames" 
+                                                        :data="worksheetData.json" 
+                                                        :noRowsPreview="5" 
+                                                        :tableCaption="'Preview data'" ></preview-data>
                                     
-                                    <div class="container-fluid" v-if="worksheetData.columnNames">
-                                        <div class="row">
+                                    
+                                        <div class="row container-fluid">
+                                            <div class="form-check container-fluid">
+                                                <input type="checkbox" class="form-check-input" v-model="importContacts"></input>                                        
+                                                <label class="form-check-label">Importeer namen</label>    
+                                            </div>
                                             <select-fields :columns="worksheetData.columnNames" 
-                                                           :importfields="selectedFields" 
+                                                           :importfields="passedFields" 
                                                            :caption="'Koppel de velden om te importeren'"></select-fields>
                                         </div>
-                                        <div class="row">
+                                        <div class="row container-fluid">
                                             <div class="col-md-3">
                                                 <div class="panel panel-default" >
                                                     <div class="panel-heading clearfix">Template</div>
@@ -551,7 +612,7 @@ Vue.component('modal-validate', {
         <transition name="modal">
             <div class ="modal-mask" v-show="show">
                 <div class ="modal-wrapper">
-                    <div class ="modal-container">
+                    <div class ="modal-container scrollbar">
                         <div class ="modal-header h3">
                             <slot name="header">
                                 Controleer de berichten:
@@ -765,7 +826,7 @@ Vue.component('select-fields', {
                         <select class ="form-control fixed-width" v-model="importfields[field]" v-on:change="selectedFieldsChanged">
                             <option disabled value="">Kies een kolom</option>
                             <option v-for="key in columns" :value="key">{{key}}</option>
-                        </select>
+                        </select>                      
                     </div>
                 </div>
             </div>
@@ -938,6 +999,16 @@ Vue.component('sms-validation-wrapper', {
             var vm = this;
 
             return vm.sms.ContactNumber;
+        },
+        FirstName: function () {
+            var vm = this;
+
+            return vm.sms.FirstName;
+        },
+        LastName: function () {
+            var vm = this;
+
+            return vm.sms.LastName;
         },
         Id: function () {
             var vm = this;

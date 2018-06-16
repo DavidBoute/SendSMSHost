@@ -18,15 +18,13 @@ namespace SendSMSHost.Models
         [Required]
         public string DefaultColorHex { get; set; }
 
+        // Navigation properties
         public virtual ICollection<Sms> Sms { get; set; }
 
-        public static Status FindStatusById(int Id)
+        public static Status FindStatusById(int Id, ISendSMSHostContext db)
         {
-            using (SendSMSHostContext db = new SendSMSHostContext())
-            {
                 Status status = db.Status.First(x => x.Id == Id);
                 return status;
-            }
         }
     }
 }

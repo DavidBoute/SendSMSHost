@@ -27,19 +27,6 @@ namespace SendSMSHost.Migrations
                 new Status { Id = 4, Name = "Sent", DefaultColorHex = "#c3e6cb" },
                 new Status { Id = 0, Name = "Error", DefaultColorHex = "#f5c6cb" });
 
-            context.Contacts.AddOrUpdate(x => x.Id,
-                new Contact { Id = new Guid("6185B42F-7A64-4D9B-9098-B5E4503E75C7"), FirstName = "Freddy", LastName = "De Testaccount", Number = "+32494240152" });
-
-            context.Sms.AddOrUpdate(x => x.Id,
-                new Sms
-                {
-                    Id = new Guid("6B86A791-5D32-4281-BC4E-C8EEE8647817"),
-                    ContactId = new Guid("6185B42F-7A64-4D9B-9098-B5E4503E75C7"),
-                    Message = "Test",
-                    StatusId = 1,
-                    TimeStamp = DateTime.Now
-                });
-
             context.SaveChanges();
 
 

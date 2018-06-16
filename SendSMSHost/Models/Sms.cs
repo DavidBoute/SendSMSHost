@@ -17,18 +17,15 @@ namespace SendSMSHost.Models
         [Required]
         public DateTime TimeStamp { get; set; }
 
-        public int StatusId { get; set; }
+        // Navigation properties
         public virtual Status Status { get; set; }
-
-        public Guid ContactId { get; set; }
         public virtual Contact Contact { get; set; }
 
-        public Sms CopyFromSmsDTO(SmsDTO smsDTO)
+        public Sms CopyFromSmsDTO(SmsDTO smsDTO, ISendSMSHostContext db)
         {
             Message = smsDTO.Message;
             TimeStamp = DateTime.Parse(smsDTO.TimeStamp);
-            StatusId = smsDTO.StatusId;
-            Status = Status.FindStatusById(smsDTO.StatusId);
+            Status = Status.FindStatusById(smsDTO.StatusId, db);
 
             Contact contact= Contact.FindOrCreate(
                 new ContactDTO
@@ -38,33 +35,29 @@ namespace SendSMSHost.Models
                     LastName = smsDTO.ContactLastName,
                     Number = smsDTO.ContactNumber,
                     IsAnonymous = smsDTO.ContactFirstName == "" && smsDTO.ContactLastName == ""
-                });
-            ContactId = contact.Id;
+                }, db);
             Contact = contact;
 
             return this;
         }
 
-        public static Sms FindSmsById(Guid guid)
+        public static Sms FindSmsById(Guid guid, ISendSMSHostContext db)
         {
-            using (SendSMSHostContext db = new SendSMSHostContext())
-            {
                 Sms sms = db.Sms
                     .Include("Contact")
                     .Include("Status")
                     .FirstOrDefault(x => x.Id == guid);
                 return sms;
-            }
         }
 
-        public static Sms FindSmsById(string guid)
+        public static Sms FindSmsById(string guid, ISendSMSHostContext db)
         {
-            return FindSmsById(Guid.Parse(guid));
+            return FindSmsById(Guid.Parse(guid),db);
         }
 
-        public static Sms FindOrCreate(SmsDTO smsDTO)
+        public static Sms FindOrCreate(SmsDTO smsDTO, ISendSMSHostContext db)
         {
-            Sms sms = FindSmsById(Guid.Parse(smsDTO.Id));
+            Sms sms = FindSmsById(Guid.Parse(smsDTO.Id),db);
             if (sms == null)
             {
                 sms = new Sms()
@@ -72,7 +65,7 @@ namespace SendSMSHost.Models
                     Id = Guid.Parse(smsDTO.Id),
                     Message = smsDTO.Message,
                     TimeStamp = DateTime.Parse(smsDTO.TimeStamp),
-                    Status = Status.FindStatusById(smsDTO.StatusId),
+                    Status = Status.FindStatusById(smsDTO.StatusId, db),
                     Contact = Contact.FindOrCreate(
                         new ContactDTO
                         {
@@ -81,7 +74,7 @@ namespace SendSMSHost.Models
                             LastName = smsDTO.ContactLastName,
                             Number = smsDTO.ContactNumber,
                             IsAnonymous = smsDTO.ContactFirstName == "" && smsDTO.ContactLastName == ""
-                        })
+                        }, db)
                 };
             }
 
@@ -93,12 +86,12 @@ namespace SendSMSHost.Models
 
         }
 
-        public Sms(SmsDTO smsDTO)
+        public Sms(SmsDTO smsDTO, ISendSMSHostContext db)
         {
             Id = Guid.Parse(smsDTO.Id);
             Message = smsDTO.Message;
             TimeStamp = DateTime.Parse(smsDTO.TimeStamp);
-            Status = Status.FindStatusById(smsDTO.StatusId);
+            Status = Status.FindStatusById(smsDTO.StatusId, db);
             Contact = new Contact
             {
                 Id = Guid.Parse(smsDTO.ContactId),

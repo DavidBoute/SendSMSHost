@@ -13,8 +13,6 @@ namespace SendSMSHost.SignalR
 {
     public class ServerSentEventsHub : Hub
     {
-        private SendSMSHostContext db;
-
         #region Request methods // Clients vragen data aan
 
         #region Sms
@@ -36,23 +34,25 @@ namespace SendSMSHost.SignalR
         {
             List<SmsDTO> smsDTOList;
 
-            if (!includeCreated)
+            using (ISendSMSHostContext db = new SendSMSHostContext())
             {
-                var statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
-                smsDTOList = db.Sms
-                            .Where(x => x.StatusId != statusCreated.Id)
-                            .OrderBy(x => x.TimeStamp)
-                            .AsEnumerable()
-                            .Select(x => new SmsDTO(x))
-                            .ToList();
-            }
-            else
-            {
-                smsDTOList = db.Sms
-                            .OrderBy(x => x.TimeStamp)
-                            .AsEnumerable()
-                            .Select(x => new SmsDTO(x))
-                            .ToList();
+                if (!includeCreated)
+                {
+                    var statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
+                    smsDTOList = statusCreated.Sms
+                                .OrderBy(x => x.TimeStamp)
+                                .AsEnumerable()
+                                .Select(x => new SmsDTO(x))
+                                .ToList();
+                }
+                else
+                {
+                    smsDTOList = db.Sms
+                                .OrderBy(x => x.TimeStamp)
+                                .AsEnumerable()
+                                .Select(x => new SmsDTO(x))
+                                .ToList();
+                }
             }
 
             Clients.Caller.getSmsList(smsDTOList);
@@ -65,10 +65,13 @@ namespace SendSMSHost.SignalR
         {
             List<StatusDTO> statusDTOList;
 
-            statusDTOList = db.Status
-                            .AsEnumerable()
-                            .Select(x => new StatusDTO(x))
-                            .ToList();
+            using (ISendSMSHostContext db = new SendSMSHostContext())
+            {
+                statusDTOList = db.Status
+                                .AsEnumerable()
+                                .Select(x => new StatusDTO(x))
+                                .ToList();
+            }
 
             Clients.Caller.getStatusList(statusDTOList);
         }
@@ -80,12 +83,14 @@ namespace SendSMSHost.SignalR
         {
             List<ContactDTO> contactDTOList;
 
-            contactDTOList = db.Contacts
-                            .Where(x => !x.IsAnonymous)
-                            .AsEnumerable()
-                            .Select(x => new ContactDTO(x))
-                            .ToList();
-
+            using (ISendSMSHostContext db = new SendSMSHostContext())
+            {
+                contactDTOList = db.Contacts
+                                .Where(x => !x.IsAnonymous)
+                                .AsEnumerable()
+                                .Select(x => new ContactDTO(x))
+                                .ToList();
+            }
 
             Clients.Caller.getContactList(contactDTOList);
         }
@@ -108,61 +113,66 @@ namespace SendSMSHost.SignalR
         /// <param name="smsDTO">de te maken sms</param>
         public async Task RequestCreateSms(SmsDTO smsDTO)
         {
-            // Indien ContactId == null dan opzoeken of nieuw contact voorzien
-            if (String.IsNullOrWhiteSpace(smsDTO.ContactId))
+            using (ISendSMSHostContext db = new SendSMSHostContext())
             {
-                // kijken of nummer al in gebruik is
-                Contact contact = db.Contacts
-                                    .SingleOrDefault(x => x.Number == smsDTO.ContactNumber);
-                if (contact == null) // nieuw contact maken
+
+                // Indien ContactId == null dan opzoeken of nieuw contact voorzien
+                if (String.IsNullOrWhiteSpace(smsDTO.ContactId))
                 {
-                    contact = new Contact
+                    // kijken of nummer al in gebruik is
+                    Contact contact = db.Contacts
+                                        .SingleOrDefault(x => x.Number == smsDTO.ContactNumber);
+                    if (contact == null) // nieuw contact maken
                     {
-                        Id = Guid.NewGuid(),
-                        FirstName = smsDTO.ContactNumber,
-                        LastName = "",
-                        Number = smsDTO.ContactNumber,
-                        IsAnonymous = true
-                    };
+                        contact = new Contact
+                        {
+                            Id = Guid.NewGuid(),
+                            FirstName = smsDTO.ContactNumber,
+                            LastName = "",
+                            Number = smsDTO.ContactNumber,
+                            IsAnonymous = true
+                        };
 
-                    db.Contacts.Add(contact);
-                    try
-                    {
-                        await db.SaveChangesAsync();
+                        db.Contacts.Add(contact);
+                        try
+                        {
+                            await db.SaveChangesAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex.Message);
+                            throw;
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(ex.Message);
-                        throw;
-                    }
+                    smsDTO.ContactId = contact.Id.ToString();
+                    smsDTO.ContactFirstName = contact.FirstName;
+                    smsDTO.ContactLastName = contact.LastName;
                 }
-                smsDTO.ContactId = contact.Id.ToString();
-                smsDTO.ContactFirstName = contact.FirstName;
-                smsDTO.ContactLastName = contact.LastName;
-            }
 
-            Sms sms = new Sms(smsDTO);
+                Sms sms = new Sms(smsDTO, db)
+                {
+                    Id = Guid.NewGuid(),
+                    TimeStamp = DateTime.Now,
+                    Status = await db.Status
+                                    .SingleOrDefaultAsync(x => x.Name == "Created")
+                };
+                db.Sms.Add(sms);
 
-            sms.Id = Guid.NewGuid();
-            sms.TimeStamp = DateTime.Now;
-            sms.Status = await db.Status
-                                .SingleOrDefaultAsync(x => x.Name == "Created");
-            db.Sms.Add(sms);
+                try
+                {
+                    await db.SaveChangesAsync();
 
-            try
-            {
-                await db.SaveChangesAsync();
-
-                smsDTO = new SmsDTO(await db.Sms
-                                        .SingleOrDefaultAsync(x => x.Id == sms.Id));
+                    smsDTO = new SmsDTO(await db.Sms
+                                            .SingleOrDefaultAsync(x => x.Id == sms.Id));
 
 
-                UpdateLog(db, smsDTO, "POST");
-                NotifyCreateSms(smsDTO, Clients);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
+                    await UpdateLog(db, smsDTO, "POST");
+                    NotifyCreateSms(smsDTO, Clients);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
             }
         }
 
@@ -172,22 +182,27 @@ namespace SendSMSHost.SignalR
         /// <param name="smsDTO">de aan te passen sms</param>
         public async Task RequestEditSms(SmsDTO smsDTO)
         {
-            Sms sms = Sms.FindSmsById(smsDTO.Id);
-            sms.CopyFromSmsDTO(smsDTO);
-
-            db.Set<Sms>().Attach(sms);
-            db.Entry(sms).State = EntityState.Modified;
-
-            try
+            using (ISendSMSHostContext db = new SendSMSHostContext())
             {
-                await db.SaveChangesAsync();
+                Sms sms = Sms.FindSmsById(smsDTO.Id, db);
+                Debug.Print(sms.Status.Name);
+                sms.CopyFromSmsDTO(smsDTO, db);
+                Debug.Print(sms.Status.Name);
 
-                UpdateLog(db, smsDTO, "PUT");
-                NotifyEditSms(smsDTO, Clients);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
+                //db.Set<Sms>().Attach(sms);
+                //db.Entry(sms).State = EntityState.Modified;
+
+                try
+                {
+                    await db.SaveChangesAsync();
+
+                    await UpdateLog(db, smsDTO, "PUT");
+                    NotifyEditSms(smsDTO, Clients);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
             }
         }
 
@@ -197,20 +212,23 @@ namespace SendSMSHost.SignalR
         /// <param name="smsDTO">de te verwijderen sms</param>
         public async Task RequestDeleteSms(SmsDTO smsDTO)
         {
-            Sms sms = await db.Sms.FindAsync(Guid.Parse(smsDTO.Id));
-            if (sms != null)
+            using (ISendSMSHostContext db = new SendSMSHostContext())
             {
-                db.Sms.Remove(sms);
-                try
+                Sms sms = await db.Sms.FindAsync(Guid.Parse(smsDTO.Id));
+                if (sms != null)
                 {
-                    await db.SaveChangesAsync();
+                    db.Sms.Remove(sms);
+                    try
+                    {
+                        await db.SaveChangesAsync();
 
-                    UpdateLog(db, smsDTO, "DELETE");
-                    NotifyDeleteSms(smsDTO, Clients);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
+                        await UpdateLog(db, smsDTO, "DELETE");
+                        NotifyDeleteSms(smsDTO, Clients);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex.Message);
+                    }
                 }
             }
         }
@@ -221,22 +239,25 @@ namespace SendSMSHost.SignalR
         /// <param name="smsDTOList">de te importeren sms</param>
         public async Task RequestCreateSmsBulk(List<SmsDTO> smsDTOList)
         {
-            IEnumerable<ImportSms> smsImportList = smsDTOList.Select(x => new ImportSms()
+            using (ISendSMSHostContext db = new SendSMSHostContext())
             {
-                ContactNumber = x.ContactNumber,
-                Message = x.Message
-            })
-            .AsEnumerable();
+                IEnumerable<ImportSms> smsImportList = smsDTOList.Select(x => new ImportSms()
+                {
+                    ContactNumber = x.ContactNumber,
+                    Message = x.Message
+                })
+                .AsEnumerable();
 
-            db.ImportSms.AddRange(smsImportList);
+                db.ImportSms.AddRange(smsImportList);
 
-            try
-            {
-                await db.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
             }
         }
         #endregion
@@ -248,10 +269,13 @@ namespace SendSMSHost.SignalR
         /// </summary>
         public void RequestForeverChart(bool includeDeleted = false)
         {
-            IChartDataFactory chartDataFactory = new ForeverChartDataFactory();
-            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
+            using (ISendSMSHostContext db = new SendSMSHostContext())
+            {
+                IChartDataFactory chartDataFactory = new ForeverChartDataFactory();
+                ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
 
-            Clients.Caller.notifyChangeForeverChart(chartdata);
+                Clients.Caller.notifyChangeForeverChart(chartdata);
+            }
         }
 
         /// <summary>
@@ -259,10 +283,13 @@ namespace SendSMSHost.SignalR
         /// </summary>
         public void RequestWeekChart(bool includeDeleted = false)
         {
-            IChartDataFactory chartDataFactory = new WeekChartDataFactory();
-            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
+            using (ISendSMSHostContext db = new SendSMSHostContext())
+            {
+                IChartDataFactory chartDataFactory = new WeekChartDataFactory();
+                ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
 
-            Clients.Caller.notifyChangeWeekChart(chartdata);
+                Clients.Caller.notifyChangeWeekChart(chartdata);
+            }
         }
 
         /// <summary>
@@ -270,10 +297,13 @@ namespace SendSMSHost.SignalR
         /// </summary>
         public void RequestDayChart(bool includeDeleted = false)
         {
-            IChartDataFactory chartDataFactory = new DayChartDataFactory();
-            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
+            using (ISendSMSHostContext db = new SendSMSHostContext())
+            {
+                IChartDataFactory chartDataFactory = new DayChartDataFactory();
+                ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
 
-            Clients.Caller.notifyChangeDayChart(chartdata);
+                Clients.Caller.notifyChangeDayChart(chartdata);
+            }
         }
 
         /// <summary>
@@ -281,10 +311,13 @@ namespace SendSMSHost.SignalR
         /// </summary>
         public void RequestHourChart(bool includeDeleted = false)
         {
-            IChartDataFactory chartDataFactory = new HourChartDataFactory();
-            ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
+            using (ISendSMSHostContext db = new SendSMSHostContext())
+            {
+                IChartDataFactory chartDataFactory = new HourChartDataFactory();
+                ChartData chartdata = chartDataFactory?.CreateChartData(db, includeDeleted);
 
-            Clients.Caller.notifyChangeHourChart(chartdata);
+                Clients.Caller.notifyChangeHourChart(chartdata);
+            }
         }
 
         #endregion
@@ -318,12 +351,15 @@ namespace SendSMSHost.SignalR
         /// Zorgt voor volledige herinladen lijst
         /// </summary>
         /// <param name="smsDTOWithClient">de aangepaste SmsDTO met bewerkingsgegevens</param>
-        public void NotifyChange(SmsDTO smsDTO, string operation)
+        public async void NotifyChange(SmsDTO smsDTO, string operation)
         {
-            Clients.Others.notifyChangeToSmsList();
-            Clients.All.notifyChangeToCharts();
+            using (ISendSMSHostContext db = new SendSMSHostContext())
+            {
+                Clients.Others.notifyChangeToSmsList();
+                Clients.All.notifyChangeToCharts();
 
-            UpdateLog(db, smsDTO, operation);
+                await UpdateLog(db, smsDTO, operation);
+            }
         }
 
         /// <summary>
@@ -343,11 +379,11 @@ namespace SendSMSHost.SignalR
         /// <param name="hubContext"></param>
         /// <param name="smsDTO"></param>
         /// <param name="operation"></param>
-        public static void NotifyChange(IHubContext hubContext, SmsDTO smsDTO, string operation)
+        public static async Task NotifyChange(IHubContext hubContext, SmsDTO smsDTO, string operation)
         {
-            using (SendSMSHostContext db = new SendSMSHostContext())
+            using (ISendSMSHostContext db = new SendSMSHostContext())
             {
-                UpdateLog(db, smsDTO, operation);
+                await UpdateLog(db, smsDTO, operation);
             }
 
             switch (operation)
@@ -381,8 +417,11 @@ namespace SendSMSHost.SignalR
         /// <param name="smsID">Id van de sms</param>
         public async Task SendSelectedSms(Guid smsId)
         {
-            var smsDTO = new SmsDTO(await db.Sms.SingleOrDefaultAsync(x => x.Id == smsId));
-            Clients.Others.sendSelectedSms(smsDTO);
+            using (ISendSMSHostContext db = new SendSMSHostContext())
+            {
+                var smsDTO = new SmsDTO(await db.Sms.SingleOrDefaultAsync(x => x.Id == smsId));
+                Clients.Others.sendSelectedSms(smsDTO);
+            }
         }
 
         // TODO: automatisch zenden uitschakelen
@@ -399,7 +438,7 @@ namespace SendSMSHost.SignalR
 
         #region Logging methods // Zorgen dat bewerkingen bijgehouden worden
 
-        public static void UpdateLog(SendSMSHostContext db, SmsDTO smsDTO, string operation)
+        public static async Task UpdateLog(ISendSMSHostContext db, SmsDTO smsDTO, string operation)
         {
             db.Log.Add(new Log
             {
@@ -409,14 +448,9 @@ namespace SendSMSHost.SignalR
                 StatusName = smsDTO.StatusName
             });
 
-            db.SaveChanges();
+            await db.SaveChangesAsync();
         }
 
         #endregion
-
-        public ServerSentEventsHub()
-        {
-            db = new SendSMSHostContext();
-        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNet.SignalR;
 using SendSMSHost.Models;
+using SendSMSHost.Models.Factory;
 using SendSMSHost.SignalR;
 using System;
 using System.Data;
@@ -15,7 +16,8 @@ namespace SendSMSHost.Controllers
     public class SmsController : ApiController
     {
         private SendSMSHostContext db = new SendSMSHostContext();
-        private IHubContext _signalRContext;
+        private readonly IHubContext _signalRContext;
+
 
         // GET: api/Sms
         public IQueryable<SmsDTO> GetSms()
@@ -48,30 +50,30 @@ namespace SendSMSHost.Controllers
             {
                 return BadRequest(ModelState);
             }
+            
+                Sms sms = new Sms(smsDTO, db);
+                //db.Set<Sms>().Attach(sms);
+                //db.Entry(sms).State = EntityState.Modified;
 
-            Sms sms = new Sms(smsDTO);
-            db.Set<Sms>().Attach(sms);
-            db.Entry(sms).State = EntityState.Modified;
-
-            try
-            {
-                await db.SaveChangesAsync();
-
-                ServerSentEventsHub.NotifyChange(_signalRContext,
-                                                smsDTO: smsDTO,
-                                                operation: "PUT");
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!SmsExists(sms.Id))
+                try
                 {
-                    return NotFound();
+                    await db.SaveChangesAsync();
+
+                    await ServerSentEventsHub.NotifyChange(_signalRContext,
+                                                        smsDTO: smsDTO,
+                                                        operation: "PUT");
                 }
-                else
+                catch (DbUpdateConcurrencyException)
                 {
-                    throw;
+                    if (!SmsExists(sms.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
                 }
-            }
 
             return Ok(smsDTO);
         }
@@ -117,11 +119,12 @@ namespace SendSMSHost.Controllers
                 smsDTO.ContactLastName = contact.LastName;
             }
 
-            Sms sms = new Sms(smsDTO);
-
-            sms.Id = Guid.NewGuid();
-            sms.TimeStamp = DateTime.Now;
-            sms.Status = await db.Status.SingleOrDefaultAsync(x => x.Name == "Created");
+            Sms sms = new Sms(smsDTO, db)
+            {
+                Id = Guid.NewGuid(),
+                TimeStamp = DateTime.Now,
+                Status = await db.Status.SingleOrDefaultAsync(x => x.Name == "Created")
+            };
             db.Sms.Add(sms);
 
             try
@@ -131,9 +134,9 @@ namespace SendSMSHost.Controllers
                 smsDTO = await db.Sms.Select(x => new SmsDTO(x))
                     .SingleOrDefaultAsync(x => x.Id == sms.Id.ToString());
 
-                ServerSentEventsHub.NotifyChange(_signalRContext,
-                                                smsDTO: smsDTO,
-                                                operation: "POST");
+                await ServerSentEventsHub.NotifyChange(_signalRContext,
+                                                        smsDTO: smsDTO,
+                                                        operation: "POST");
             }
             catch (DbUpdateException)
             {
@@ -173,9 +176,9 @@ namespace SendSMSHost.Controllers
             {
                 await db.SaveChangesAsync();
 
-                ServerSentEventsHub.NotifyChange(_signalRContext,
-                                                smsDTO: smsDTO,
-                                                operation: "DELETE");
+                await ServerSentEventsHub.NotifyChange(_signalRContext,
+                                                    smsDTO: smsDTO,
+                                                    operation: "DELETE");
             }
             catch (Exception ex)
             {

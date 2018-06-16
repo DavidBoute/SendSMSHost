@@ -13,25 +13,21 @@ namespace SendSMSHost.Models
 
         public string FirstName { get; set; }
         public string LastName { get; set; }
-
         public string Number { get; set; }
-
         public bool IsAnonymous { get; set; }
 
+        // Navigation properties
         public virtual ICollection<Sms> Sms { get; set; }
 
-        public static Contact FindContactById(Guid guid)
+        public static Contact FindContactById(Guid guid,ISendSMSHostContext db)
         {
-            using (SendSMSHostContext db = new SendSMSHostContext())
-            {
                 Contact contact = db.Contacts.FirstOrDefault(x => x.Id == guid);
                 return contact;
-            }
         }
 
-        public static Contact FindOrCreate(ContactDTO contactDTO)
+        public static Contact FindOrCreate(ContactDTO contactDTO, ISendSMSHostContext db)
         {
-            Contact contact = FindContactById(Guid.Parse(contactDTO.Id));
+            Contact contact = FindContactById(Guid.Parse(contactDTO.Id),db);
 
             return contact ?? new Contact(contactDTO);
         }

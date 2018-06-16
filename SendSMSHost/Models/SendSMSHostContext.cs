@@ -1,4 +1,6 @@
-﻿using System.Data.Entity;
+﻿using System;
+using System.Data.Entity;
+using System.Threading.Tasks;
 
 namespace SendSMSHost.Models
 {
@@ -21,14 +23,23 @@ namespace SendSMSHost.Models
         public DbSet<Status> Status { get; set; }
         public DbSet<ImportSms> ImportSms { get; set; }
         public DbSet<Log> Log { get; set; }
+
+        internal void SaveChangesasync()
+        {
+            throw new NotImplementedException();
+        }
     }
 
-    public interface ISendSMSHostContext
+    public interface ISendSMSHostContext: IDisposable
     {
         DbSet<Contact> Contacts { get; set; }
         DbSet<Sms> Sms { get; set; }
         DbSet<Status> Status { get; set; }
         DbSet<ImportSms> ImportSms { get; set; }
         DbSet<Log> Log { get; set; }
+
+        DbSet<TEntity> Set<TEntity>() where TEntity : class;
+
+        Task<int> SaveChangesAsync();
     }
 }
