@@ -8,10 +8,11 @@
         <div class="h3 col-sm-2">
             {{ message }}
         </div>
-        <div class="h3">
+        <div class="h3 col-sm-2">
             <input type="checkbox" class="form-check-input h6" v-model="includeDeleted">
             <span class="h6">Include deleted?</span>
         </div>
+        <button class="h3 btn btn-danger btn-sm pull-right" style="margin-right: 15px; margin-bottom: 5px;" v-on:click="clearLogs">Wis logs</button>
     </header>
 
     <div class="panel-group">

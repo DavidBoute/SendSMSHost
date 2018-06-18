@@ -61,6 +61,11 @@ var connectionMethods = {
             var self = this;
             SSEHub.server.requestHourChart(self.includeDeleted);
         },
+
+        // Vragen aanpassing database
+        requestClearLogs: function () {
+            SSEHub.server.requestClearLogs();
+        }
     }
 };
 

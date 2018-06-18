@@ -32,6 +32,8 @@ namespace SendSMSHost.Models
             return contact ?? new Contact(contactDTO);
         }
 
+
+
         public Contact()
         {
 

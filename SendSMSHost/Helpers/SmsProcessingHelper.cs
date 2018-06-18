@@ -20,9 +20,6 @@ namespace SendSMSHost.Helpers
             // nieuwe context opvragen  
             using (var db = new SendSMSHostContext())
             {
-                // kijken als er records in de tabel ImportSms zijn
-                // en toevoegen aan genormaliseerde tabellen.
-
                 int importSmsCount = db.ImportSms.Count();
                 if (importSmsCount > 0)
                 {
@@ -30,8 +27,74 @@ namespace SendSMSHost.Helpers
 
                     Status statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
 
-                    // eerst alle contacten aanmaken
+                    // eerst alle bestaande contacten zonder contactgegevens updaten waar mogelijk
+                    var contactUpdateList = db.ImportSms
+                                                .Where(x => !((x.ContactFirstName == null || x.ContactFirstName == "")
+                                                        && (x.ContactLastName == null || x.ContactLastName == "")))
+                                                .Select(x => new
+                                                {
+                                                    Number = x.ContactNumber,
+                                                    FirstName = x.ContactFirstName ?? String.Empty,
+                                                    LastName = x.ContactLastName ?? String.Empty
+                                                })
+                                                .GroupBy(k => k.Number)
+                                                .Select(g => g.FirstOrDefault())
+                                                .Where(x => db.Contacts
+                                                                .Where(y => y.IsAnonymous)
+                                                                .Select(z => z.Number)
+                                                                .Contains(x.Number))
+                                                .AsEnumerable()
+                                                .Select(x => new Contact
+                                                {
+                                                    Id = Guid.NewGuid(),
+                                                    Number = x.Number,
+                                                    IsAnonymous = false,
+                                                    FirstName = x.FirstName,
+                                                    LastName = x.LastName
+                                                });
+
+                    foreach (var contact in contactUpdateList)
+                    {
+                        var oldContact = db.Contacts.Single(x => x.Number == contact.Number);
+                        oldContact.FirstName = contact.FirstName;
+                        oldContact.LastName = contact.LastName;
+                        oldContact.IsAnonymous = contact.IsAnonymous;
+                    }
+
+                    int contactUpdateListCount = contactUpdateList.Count();
+
+                    // dan alle nieuwe contacten met contactgegevens aanmaken
+                    var contactNameList = db.ImportSms
+                                                .Where(x => !((x.ContactFirstName == null || x.ContactFirstName == "")
+                                                        && (x.ContactLastName == null || x.ContactLastName == "")))
+                                                .Select(x => new
+                                                {
+                                                    Number = x.ContactNumber,
+                                                    FirstName = x.ContactFirstName ?? String.Empty,
+                                                    LastName = x.ContactLastName ?? String.Empty
+                                                })
+                                                .GroupBy(k => k.Number)
+                                                .Select(g => g.FirstOrDefault())
+                                                .Where(x => !db.Contacts
+                                                                .Select(y => y.Number)
+                                                                .Contains(x.Number))
+                                                .AsEnumerable()
+                                                .Select(x => new Contact
+                                                {
+                                                    Id = Guid.NewGuid(),
+                                                    Number = x.Number,
+                                                    IsAnonymous = false,
+                                                    FirstName = x.FirstName,
+                                                    LastName = x.LastName
+                                                });
+
+                    db.Contacts.AddRange(contactNameList);
+                    int contactNameListCount = contactNameList.Count();
+
+                    // dan alle nieuwe contacten zonder contactgegevens aanmaken
                     var contactNumberList = db.ImportSms
+                                                .Where(x => (x.ContactFirstName == null || x.ContactFirstName == "")
+                                                        && (x.ContactLastName == null || x.ContactLastName == ""))
                                                 .Select(x => x.ContactNumber)
                                                 .Distinct()
                                                 .Where(x => !db.Contacts
@@ -51,11 +114,13 @@ namespace SendSMSHost.Helpers
                     try
                     {
                         await db.SaveChangesAsync();
-                        Debug.WriteLine($"[{DateTime.Now}] Created {contactNumberListCount} new contacts");
+                        Debug.WriteLine($"[{DateTime.Now}] Updated {contactUpdateListCount} anonymous contacts");
+                        Debug.WriteLine($"[{DateTime.Now}] Created {contactNameListCount} new contacts");
+                        Debug.WriteLine($"[{DateTime.Now}] Created {contactNumberListCount} new anonymous contacts");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
+                        Debug.WriteLine(ex.Message);
                         throw ex;
                     }
 
@@ -93,7 +158,7 @@ namespace SendSMSHost.Helpers
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
+                        Debug.WriteLine(ex.Message);
                         throw ex;
                     }
                 }

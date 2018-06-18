@@ -245,6 +245,10 @@
     <Compile Include="Migrations\201806161248382_expliciete_FK_verwijderd.Designer.cs">
       <DependentUpon>201806161248382_expliciete_FK_verwijderd.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201806181816545_ImportSms_met_namen.cs" />
+    <Compile Include="Migrations\201806181816545_ImportSms_met_namen.Designer.cs">
+      <DependentUpon>201806181816545_ImportSms_met_namen.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Contact.cs" />
     <Compile Include="Models\DTO.cs" />
@@ -386,6 +390,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201806161248382_expliciete_FK_verwijderd.resx">
       <DependentUpon>201806161248382_expliciete_FK_verwijderd.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201806181816545_ImportSms_met_namen.resx">
+      <DependentUpon>201806181816545_ImportSms_met_namen.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

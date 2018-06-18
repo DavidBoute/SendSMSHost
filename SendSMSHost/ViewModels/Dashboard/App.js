@@ -70,8 +70,12 @@ var app = new Vue({
             this.requestWeekChartData(includeDeleted);
             this.requestDayChartData(includeDeleted);
             this.requestHourChartData(includeDeleted);
-        }
-        
+        },
+        clearLogs: function() {
+            this.requestClearLogs();
+
+            this.getChartData(this.includeDeleted);
+        }       
     },
     watch: {
         includeDeleted: function (newVal, oldVal) { 

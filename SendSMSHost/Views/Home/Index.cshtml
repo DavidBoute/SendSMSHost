@@ -47,8 +47,22 @@
     </nav>
     <nav class="row">
         <div class="col-md-8">
+            <div class="btn-group" style="margin-bottom: 5px" v-if="filteredSmsList">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Filter
+                </button>
+                <div class="dropdown-menu" style="padding: 0">
+                    <table class="table table-hover" style="margin-bottom: 0">
+                        <tr v-for="(v,k) in listFilter" class="dropdown-item" style="margin-left:5px">
+                            <td>{{k}}</td>
+                            <td><input type="checkbox" v-model="listFilter[k]" /></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
             <ul class="list-group list-scrollable scrollbar">
-                <li v-for="s in smsList"
+                <li v-for="s in filteredSmsList"
                     v-on:click="selectSms(s)" :class="getSmsClass(s)">
                     <span class="list-group-item-heading">{{ getFullContactName(s) }}</span>
                     <span class="list-group-item-text text-muted">({{ s.ContactNumber }})</span>

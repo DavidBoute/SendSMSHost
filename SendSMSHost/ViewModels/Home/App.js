@@ -213,12 +213,12 @@ Vue.component('modal-import', {
                 fileName: ''
             },
             selectedFields: {
-                Message: '',
-                ContactNumber: '',
-                FirstName: '',
-                LastName: ''
+                Bericht: '',
+                Nummer: '',
+                Voornaam: '',
+                Naam: ''
             },
-            importContacts: true
+            importContacts: false
         };
     },
     computed:{
@@ -233,8 +233,8 @@ Vue.component('modal-import', {
                 // TODO: velden dynamisch maken
 
                 passedFields = {
-                    Message: vm.selectedFields.Message,
-                    ContactNumber: vm.selectedFields.ContactNumber
+                    Bericht: vm.selectedFields.Bericht,
+                    Nummer: vm.selectedFields.Nummer
                 }
             }
 
@@ -351,11 +351,12 @@ Vue.component('modal-compose', {
             },
             textboxText: '',
             selectedFields: {
-                ContactNumber: '',
-                FirstName: '',
-                LastName: ''
+                Bericht: '',
+                Nummer: '',
+                Voornaam: '',
+                Naam: ''
             },
-            importContacts: true
+            importContacts: false
         };
     },
     computed: {
@@ -370,8 +371,8 @@ Vue.component('modal-compose', {
                 // TODO: velden dynamisch maken
 
                 passedFields = {
-                    Message: vm.selectedFields.Message,
-                    ContactNumber: vm.selectedFields.ContactNumber
+                    Bericht: vm.selectedFields.Bericht,
+                    Nummer: vm.selectedFields.Nummer
                 }
             }
 
@@ -463,7 +464,7 @@ Vue.component('modal-compose', {
                     sms[key] = element[field];
                 }
 
-                sms['Message'] = vm.getSmsContentFromHtml(vm.convertTemplateToHTML(template, element, columns));
+                sms['Bericht'] = vm.getSmsContentFromHtml(vm.convertTemplateToHTML(template, element, columns));
 
                 sms['Id'] = index;
                 index++;
@@ -587,7 +588,7 @@ Vue.component('modal-validate', {
         getIsReadyToImport: function (sms) {
             var vm = this;
 
-            return vm.smsToImport.includes(sms);
+            return vm.smsToImport.some(x => x.Id === sms.Id);
         },
         setIsReadyToImport: function (sms, isImport) {
             var vm = this;
@@ -598,6 +599,23 @@ Vue.component('modal-validate', {
             else if (!isImport && vm.getIsReadyToImport(sms)) {
                 vm.smsToImport = vm.smsToImport.filter(x => x != sms);
             }
+        },
+        importAll: function (array) {
+            var vm = this;
+
+            vm.smsToImport = array;
+        },
+        importNone: function () {
+            var vm = this;
+
+            vm.smsToImport = [];
+        }
+    },
+    computed:{
+        countSmsToImport: function () {
+            var vm = this;
+
+            return vm.smsToImport.length;
         }
     },
     provide: function () {
@@ -605,7 +623,9 @@ Vue.component('modal-validate', {
             openModalValidate: this.openModalValidate,
             smsToImport: this.smsToImport,
             getIsReadyToImport: this.getIsReadyToImport,
-            setIsReadyToImport: this.setIsReadyToImport
+            setIsReadyToImport: this.setIsReadyToImport,
+            importAll: this.importAll,
+            importNone: this.importNone
         };
     },
     template: `
@@ -615,7 +635,7 @@ Vue.component('modal-validate', {
                     <div class ="modal-container scrollbar">
                         <div class ="modal-header h3">
                             <slot name="header">
-                                Controleer de berichten:
+                                Controleer de berichten
                             </slot>
                         </div>
 
@@ -623,7 +643,7 @@ Vue.component('modal-validate', {
                             <slot name="body">
                                 <edit-bulk-sms  :columns="importdata.columns" 
                                                 :data="importdata.data" 
-                                                :tableCaption="'Controleer de berichten'"></edit-bulk-sms> 
+                                                :tableCaption="countSmsToImport + ' sms geselecteerd.'"></edit-bulk-sms> 
                             </slot>
                         </div>
 
@@ -914,6 +934,7 @@ Vue.component('edit-bulk-sms', {
     data: function () {
         return {
             activeRow: -1,
+            validationFilter: null
         };
     },
     computed: {
@@ -923,8 +944,21 @@ Vue.component('edit-bulk-sms', {
         columnsWithValidation: function () {
             var vm = this;
 
-            return [...vm.columns, 'Count', 'IsValid', 'IsImport'];
+            return [...vm.columns, 'Count', 'IsValid'];
         },
+        validatedArray: function () {
+            var vm = this;
+
+            return vm.validateArray(vm.data);
+        },
+        filteredData: function (array) {
+            var vm = this;
+
+            if (vm.validationFilter == null) {return vm.validatedArray}
+
+            if (vm.validationFilter) { return vm.validatedArray.filter(x => x.IsValid) }
+            else { return vm.validatedArray.filter(x => !x.IsValid) }
+        }
     },
     methods: {
         setActiveSms: function (rowIndex) {
@@ -940,7 +974,36 @@ Vue.component('edit-bulk-sms', {
 
             Vue.set(vm.data, updatedSms.Id, changedSms);
         },
+        validateSms: function (sms) {
+            var vm = this;
+
+            var validatedSms = Object.assign({},
+                sms,
+                {
+                    Count: sms.Bericht.length,
+                    IsValid: vm.isValid(sms),
+                    OriginalFields: Object.keys(sms)
+                })
+
+            return validatedSms
+        },
+        isValid: function (sms) {
+            if (sms.Bericht.length > 150) { return false; };
+            if (sms.Nummer.length < 10) { return false; };
+
+            return true;
+        },
+        validateArray: function (array) {
+            var vm = this;
+
+            var validatedArray = array.map((sms, i, array) => {
+                return vm.validateSms(sms)
+            });
+
+            return validatedArray;
+        }
     },
+    inject: ['importAll', 'importNone'],
     provide: function () {
         return {
             setActiveSms: this.setActiveSms,
@@ -950,20 +1013,40 @@ Vue.component('edit-bulk-sms', {
     template: `
         <div class ="table-responsive list-scrollable scrollbar container-fluid" v-if="data">         
             <div class ="alert alert-light">
-                <table class ="table table-striped table-hover table-sm">
+                <table class ="table table-hover table-sm">
                     <caption class="h4" style="margin: 0px; padding-top: 0px">
                         {{caption}}
                     </caption>
                     <thead>
                         <tr>
                         <th class="table-row-header-fixed-width"></th>
-                        <th v-for="key in columnsWithValidation" scope="col" class ="table-header-truncate">{{key}}</th>
-                        <th></th>
+                        <th v-for="key in columns" scope="col" class ="table-header-truncate">{{key}}</th>
+                        <th scope="col" class ="table-header-truncate"># tekens</th>
+                        <th scope="col">
+                            <div class="dropdown">
+                                <a href="#" data-toggle="dropdown" class="dropdown-toggle">Validatie <b class="caret"></b></a>
+                                <ul class="dropdown-menu dropdown-menu-right">
+                                    <li><a href="#" @click="validationFilter = null">Alles</a></li>
+                                    <li><a href="#" @click="validationFilter = true">True</a></li>
+                                    <li><a href="#" @click="validationFilter = false">False</a></li>
+                                </ul>
+                            </div>
+                        </th>
+                        <th scope="col"> 
+                            <div class="dropdown">
+                                <a href="#" data-toggle="dropdown" class="dropdown-toggle">Import <b class="caret"></b></a>
+                                <ul class="dropdown-menu dropdown-menu-right">
+                                    <li><a href="#" @click="importAll(filteredData)">Alles</a></li>
+                                    <li><a href="#" @click="importNone">Geen</a></li>
+                                </ul>
+                            </div>
+                        </th>
+                        <th class="table-row-header-fixed-width"></th>
                         </tr>
                     </thead>
                     <transition>
                         <tbody>
-                            <tr v-for="entry in data" is="sms-validation-wrapper" 
+                            <tr v-for="entry in filteredData" is="sms-edit-wrapper" 
                                                         :columns="columnsWithValidation"
                                                         :sms="entry"
                                                         :active-row="activeRow">
@@ -976,8 +1059,8 @@ Vue.component('edit-bulk-sms', {
     `
 });
 
-// sms-validation-wrapper
-Vue.component('sms-validation-wrapper', {
+// sms-edit-wrapper
+Vue.component('sms-edit-wrapper', {
     props: {
         sms: Object,
         activeRow: Number,
@@ -990,25 +1073,25 @@ Vue.component('sms-validation-wrapper', {
         };
     },
     computed: {
-        Message: function () {
+        Bericht: function () {
             var vm = this;
 
-            return vm.sms.Message;
+            return vm.sms.Bericht;
         },
-        ContactNumber: function () {
+        Nummer: function () {
             var vm = this;
 
-            return vm.sms.ContactNumber;
+            return vm.sms.Nummer;
         },
-        FirstName: function () {
+        Voornaam: function () {
             var vm = this;
 
-            return vm.sms.FirstName;
+            return vm.sms.Voornaam;
         },
-        LastName: function () {
+        Naam: function () {
             var vm = this;
 
-            return vm.sms.LastName;
+            return vm.sms.Naam;
         },
         Id: function () {
             var vm = this;
@@ -1016,17 +1099,14 @@ Vue.component('sms-validation-wrapper', {
             return vm.sms.Id;
         },
         Count: function () {
-            var sms = this;
+            var vm = this;
 
-            return sms.Message.length;
+            return vm.sms.Count;
         },
         IsValid: function () {
-            var sms = this;
+            var vm = this;
 
-            if (sms.Count > 150) { return false; };
-            if (sms.ContactNumber.length < 10) { return false; };
-
-            return true;
+            return vm.sms.IsValid;
         },
         IsActive: function () {
             var sms = this;
@@ -1036,21 +1116,28 @@ Vue.component('sms-validation-wrapper', {
         smsClass: function () {
             var sms = this;
 
-            style = 'list-group-item';
+             var style = '';
 
             if (sms.IsValid) {
-                style += ' list-group-item-success';
+                style += 'list-group-item-success';
             }
             else {
-                style += ' list-group-item-danger';
+                style += 'list-group-item-danger';
             }
 
             return style;
         },
-        IsImport: function () {
-            var vm = this;
+        IsImport: {
+            get: function() {
+                var vm = this;
 
-            return vm.getIsReadyToImport(vm.sms);
+                return vm.getIsReadyToImport(vm.sms);
+            },
+            set: function (newValue) {
+                var vm = this;
+
+                vm.setIsReadyToImport(vm.sms, newValue);
+            }
         }
     },
     methods: {
@@ -1070,7 +1157,13 @@ Vue.component('sms-validation-wrapper', {
             vm.isEdit = value;
 
             if (value) {
-                vm.editSms = Object.assign({}, vm.sms, { IsImport: vm.IsImport });
+                vm.editSms = {}
+ 
+                vm.sms.OriginalFields.forEach(x => {
+                    var fieldToAdd = {};
+                    fieldToAdd[x] = vm.sms[x];
+                    vm.editSms = Object.assign(vm.editSms, fieldToAdd);
+                });
             }
             else {
                 vm.editSms = null;
@@ -1086,7 +1179,7 @@ Vue.component('sms-validation-wrapper', {
         isEditColumn: function (key) {
             var vm = this;
 
-            return Object.keys(vm.sms).includes(key);
+            return Object.keys(vm.editSms).includes(key);
         },
         isCheckboxColumn: function (key) {
             var vm = this;
@@ -1096,22 +1189,31 @@ Vue.component('sms-validation-wrapper', {
     },
     inject: ['setActiveSms', 'updateSms', 'setIsReadyToImport', 'getIsReadyToImport'],
     template: `
-                <tr>                    
-                    <td style="vertical-align: middle; padding: 8px 0px;" scope="row">
-                        <div style="padding: 20px 0px; margin-left: 5px;" v-if="IsActive"  :class="[smsClass, 'clearfix']"></div>
+                <tr  :class="smsClass">                    
+                    <td style="vertical-align: middle; padding: 0" scope="row">
+                        <div style="padding: 18px 1px; margin-right: 10px; background-color:#337ab7" v-if="IsActive"  class="clearfix"></div>
                     </td>
                     <td v-for="key in columns" class="align-middle">
-                        <div v-if="!isEdit" :class="smsClass" v-on:click="selectSms()">{{getValue(key)}}</div>
+                        <div v-if="!isEdit" v-on:click="selectSms()">{{getValue(key)}}</div> 
                         <div v-if="isEdit">
                             <textarea v-if="isEditColumn(key)" v-model="editSms[key]" class="align-bottom max-width"></textarea>
-                            <label class="checkboxContainer align-middle" v-if="isCheckboxColumn(key)"><input type="checkbox" v-model="editSms.IsImport"><span class="checkmark"></span></label>
                         </div>
-
                     </td>
-                    <td style="vertical-align: middle;">
-                        <button v-if="IsActive && !isEdit" v-on:click="setEdit(true)">+</button>
-                        <button v-if="isEdit" v-on:click="setEdit(false)">x</button>
-                        <button v-if="isEdit" v-on:click="updateData()">v</button>
+                    <td>
+                        <label v-if="!isEdit" class="checkboxContainer align-middle">
+                            <input type="checkbox" v-model="IsImport"><span class="checkmark"></span>
+                        </label>
+                    </td>
+                    <td style="vertical-align: middle; padding: 0px">
+                        <button type="button" class="btn btn-primary btn-sm" v-if="IsActive && !isEdit" v-on:click="setEdit(true)">
+                            <div class="glyphicon glyphicon-pencil"></div>
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" v-if="isEdit" v-on:click="setEdit(false)">
+                            <div class="glyphicon glyphicon-trash"></div>
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" v-if="isEdit" v-on:click="updateData()">
+                            <div class="glyphicon glyphicon-floppy-disk"></div>
+                        </button>
                     </td>
                 </tr>
     `
@@ -1262,10 +1364,13 @@ var app = new Vue({
         importdata: {
             columns: [],
             data: []
-        }
+        },
+        listFilter: {}
     },
     created: function () {
-        this.startConnection();
+        var vm = this;
+
+        vm.startConnection();
     },
     methods: {
         // Inladen data
@@ -1278,6 +1383,37 @@ var app = new Vue({
         showHeader: function () {
             this.showButtons = true;
             this.message = 'Berichten';
+        },
+        loadFilterData: function (statusArray) {
+            var vm = this;
+
+            var filterHasChanged = false;
+
+            var newFilter = {};
+            statusArray.forEach(s => {
+                var newField = {};
+                newField[s.Name] = true;
+                Object.assign(newFilter, newField);
+            });
+
+            var oldFilterKeys = Object.keys(vm.listFilter);
+            var newFilterKeys = Object.keys(newFilter);
+
+            newFilterKeys.forEach(k => {
+                if (oldFilterKeys.includes(k)
+                    && newFilter[k] !== vm.listFilter[k] ) {
+                    newFilter[k] = vm.listFilter[k];
+                    filterHasChanged = true;
+                }
+            });
+
+            if (oldFilterKeys.some(x => !newFilterKeys.includes(x))
+                || newFilterKeys.some(x => !oldFilterKeys.includes(x)))
+            {
+                filterHasChanged = true;
+            }
+
+            if (filterHasChanged) { vm.listFilter = newFilter;}           
         },
 
         // Passen weergave SmsList items aan
@@ -1374,6 +1510,22 @@ var app = new Vue({
         removeSms: function (smsDTO) {
             this.smsList = this.smsList.filter(x => x.Id !== smsDTO.Id);
             this.currentSms = null;
+        }
+    },
+    computed: {
+        filteredSmsList: function(){
+            var vm = this;
+
+            var filteredList = vm.smsList
+            var filterKeys = Object.keys(vm.listFilter);
+
+            filterKeys.forEach(k => {
+                if (!vm.listFilter[k]) {
+                    filteredList = filteredList.filter(x => x.StatusName !== k);
+                }                
+            });
+
+            return filteredList;
         }
     },
     provide: function () {

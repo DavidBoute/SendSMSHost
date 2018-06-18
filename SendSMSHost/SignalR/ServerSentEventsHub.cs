@@ -244,11 +244,34 @@ namespace SendSMSHost.SignalR
                 IEnumerable<ImportSms> smsImportList = smsDTOList.Select(x => new ImportSms()
                 {
                     ContactNumber = x.ContactNumber,
-                    Message = x.Message
+                    Message = x.Message,
+                    ContactFirstName = x.ContactFirstName,
+                    ContactLastName = x.ContactLastName
+
                 })
                 .AsEnumerable();
 
                 db.ImportSms.AddRange(smsImportList);
+
+                try
+                {
+                    await db.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Maakt de tabel Logs leeg
+        /// </summary>
+        public async Task RequestClearLogs()
+        {
+            using (ISendSMSHostContext db = new SendSMSHostContext())
+            {
+                db.Log.RemoveRange(db.Log);
 
                 try
                 {

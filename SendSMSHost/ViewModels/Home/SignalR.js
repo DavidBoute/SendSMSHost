@@ -20,6 +20,7 @@ var connectionMethods = {
             // Bij ontvangen nieuwe StatusList
             SSEHub.client.getStatusList = function (statusList) {
                 app.statusList = statusList;
+                app.loadFilterData(statusList);
             };
 
             // Bij ontvangen nieuwe ContactList
@@ -77,12 +78,23 @@ var connectionMethods = {
         requestDeleteSms: function (smsDTO) {
             SSEHub.server.requestDeleteSms(smsDTO);
         },
-        requestCreateSmsBulk: function (smsDTOList) {
-            // 400 is te veel, 250 voor de veiligheid 
+        requestCreateSmsBulk: function (array) {
+            // 400 is te veel, 100 voor de veiligheid 
             // max size 64k
             // recommended max size 32k
 
-            var step = 250;
+            var smsDTOList = array.map(obj =>
+            {
+                var smsDTO = {};
+                smsDTO.ContactNumber = obj.Nummer;
+                smsDTO.ContactFirstName = obj.Voornaam;
+                smsDTO.ContactLastName = obj.Naam;
+                smsDTO.Message = obj.Bericht;
+
+                return smsDTO;
+            })
+
+            var step = 100;
             for (var i = 0; i <= smsDTOList.length; i += step) {
                 SSEHub.server.requestCreateSmsBulk(smsDTOList.slice(i, i + step));
             }
