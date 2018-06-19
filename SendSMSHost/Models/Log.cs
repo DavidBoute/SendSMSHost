@@ -15,7 +15,11 @@ namespace SendSMSHost.Models
         [MaxLength(36)]
         public string SmsId { get; set; }
         public DateTime Timestamp { get; set; }
+        [Index]
+        [MaxLength(10)]
         public string Operation { get; set; }
+        [Index]
+        [MaxLength(10)]
         public string StatusName { get; set; }
     }
 }

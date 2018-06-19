@@ -25,8 +25,8 @@ namespace SendSMSHost.Controllers
                 }
             }
 
-            // string port = Request.ServerVariables["SERVER_PORT"];  TODO: port via proxy terugvinden
-            string port = "45455"; // Manuele waarde -> zie Conveyor
+            string port = Request.ServerVariables["SERVER_PORT"];  //TODO: port via proxy terugvinden
+            //string port = "45455"; // Manuele waarde -> zie Conveyor
 
             SyncIndexViewModel VM = new SyncIndexViewModel
             {

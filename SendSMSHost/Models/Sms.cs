@@ -88,18 +88,19 @@ namespace SendSMSHost.Models
 
         public Sms(SmsDTO smsDTO, ISendSMSHostContext db)
         {
-            Id = Guid.Parse(smsDTO.Id);
+            Id = Guid.Parse(smsDTO.Id ?? Guid.NewGuid().ToString());
             Message = smsDTO.Message;
-            TimeStamp = DateTime.Parse(smsDTO.TimeStamp);
+            TimeStamp = DateTime.Parse(smsDTO.TimeStamp ?? DateTime.Now.ToString());
             Status = Status.FindStatusById(smsDTO.StatusId, db);
-            Contact = new Contact
-            {
-                Id = Guid.Parse(smsDTO.ContactId),
-                FirstName = smsDTO.ContactFirstName,
-                LastName = smsDTO.ContactLastName,
-                Number = smsDTO.ContactNumber,
-                IsAnonymous = smsDTO.ContactFirstName == "" && smsDTO.ContactLastName == ""
-            };
+            Contact = Contact.FindOrCreate(
+                        new ContactDTO
+                        {
+                            Id = smsDTO.ContactId,
+                            FirstName = smsDTO.ContactFirstName,
+                            LastName = smsDTO.ContactLastName,
+                            Number = smsDTO.ContactNumber,
+                            IsAnonymous = smsDTO.ContactFirstName == "" && smsDTO.ContactLastName == ""
+                        }, db);
         }
     }
 }

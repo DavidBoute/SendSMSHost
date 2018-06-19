@@ -1,6 +1,8 @@
 ﻿using FluentScheduler;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNet.SignalR;
+using SendSMSHost.Models;
+using System.Data.Entity;
 using System.Diagnostics;
 using System.Web.Http;
 using System.Web.Mvc;
@@ -14,6 +16,10 @@ namespace SendSMSHost
         protected void Application_Start()
         {
             DisableApplicationInsightsOnDebug();
+
+            //Database.SetInitializer(new YourInititalizer());
+            //var dbContext = new SendSMSHostContext();
+            //dbContext.Database.Initialize(force: true);
 
             AreaRegistration.RegisterAllAreas();
             GlobalConfiguration.Configure(WebApiConfig.Register);

@@ -127,7 +127,7 @@ namespace SendSMSHost.SignalR
                         contact = new Contact
                         {
                             Id = Guid.NewGuid(),
-                            FirstName = smsDTO.ContactNumber,
+                            FirstName = "",
                             LastName = "",
                             Number = smsDTO.ContactNumber,
                             IsAnonymous = true
@@ -149,12 +149,12 @@ namespace SendSMSHost.SignalR
                     smsDTO.ContactLastName = contact.LastName;
                 }
 
+                Status statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
+
                 Sms sms = new Sms(smsDTO, db)
                 {
-                    Id = Guid.NewGuid(),
                     TimeStamp = DateTime.Now,
-                    Status = await db.Status
-                                    .SingleOrDefaultAsync(x => x.Name == "Created")
+                    Status = statusCreated
                 };
                 db.Sms.Add(sms);
 

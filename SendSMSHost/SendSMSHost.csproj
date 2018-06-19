@@ -53,6 +53,7 @@
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
@@ -249,6 +250,10 @@
     <Compile Include="Migrations\201806181816545_ImportSms_met_namen.Designer.cs">
       <DependentUpon>201806181816545_ImportSms_met_namen.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201806192121096_Index_Logs.cs" />
+    <Compile Include="Migrations\201806192121096_Index_Logs.Designer.cs">
+      <DependentUpon>201806192121096_Index_Logs.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Contact.cs" />
     <Compile Include="Models\DTO.cs" />
@@ -314,6 +319,7 @@
     <Content Include="Content\bootstrap.css.map" />
     <Content Include="Content\bootstrap-theme.min.css.map" />
     <Content Include="Content\bootstrap-theme.css.map" />
+    <None Include="Properties\PublishProfiles\Default Settings.pubxml" />
     <None Include="Scripts\jquery-3.3.1.intellisense.js" />
     <Content Include="Scripts\Chart-2.7.1.min.js" />
     <Content Include="Scripts\jquery-3.3.1.js" />
@@ -393,6 +399,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201806181816545_ImportSms_met_namen.resx">
       <DependentUpon>201806181816545_ImportSms_met_namen.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201806192121096_Index_Logs.resx">
+      <DependentUpon>201806192121096_Index_Logs.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
