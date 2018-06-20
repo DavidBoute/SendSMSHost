@@ -38,8 +38,8 @@ namespace SendSMSHost.SignalR
             {
                 if (!includeCreated)
                 {
-                    var statusCreated = db.Status.FirstOrDefault(x => x.Name == "Created");
-                    smsDTOList = statusCreated.Sms
+                    smsDTOList = db.Sms
+                                .Where(x => x.Status.Name != "Created")
                                 .OrderBy(x => x.TimeStamp)
                                 .AsEnumerable()
                                 .Select(x => new SmsDTO(x))
@@ -276,6 +276,7 @@ namespace SendSMSHost.SignalR
                 try
                 {
                     await db.SaveChangesAsync();
+                    Clients.All.notifyChangeToCharts();
                 }
                 catch (Exception ex)
                 {

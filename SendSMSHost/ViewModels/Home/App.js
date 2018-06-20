@@ -351,7 +351,6 @@ Vue.component('modal-compose', {
             },
             textboxText: '',
             selectedFields: {
-                Bericht: '',
                 Nummer: '',
                 Voornaam: '',
                 Naam: ''
@@ -371,7 +370,6 @@ Vue.component('modal-compose', {
                 // TODO: velden dynamisch maken
 
                 passedFields = {
-                    Bericht: vm.selectedFields.Bericht,
                     Nummer: vm.selectedFields.Nummer
                 }
             }
@@ -473,7 +471,7 @@ Vue.component('modal-compose', {
             });
 
 
-            var fieldsArray = ['Message', ...Object.keys(vm.passedFields)];
+            var fieldsArray = ['Bericht', ...Object.keys(vm.passedFields)];
 
             vm.openValidateModal(fieldsArray, smsImportData);
 
@@ -839,9 +837,9 @@ Vue.component('select-fields', {
     },
     template: `
         <div v-if="columns" class="container-fluid">
-            <div class ="alert alert-warning" style="margin-top: 20px">
-                <div class="h4" style="margin-top: 0px">{{caption}}</div>
-                    <div v-for="field in Object.keys(importfields)" class ="form-group form-col" style="margin-right: 20px">
+            <div class ="alert alert-warning row" style="margin-top: 20px">
+                <div class="h4 form-group" style="margin-top: 0px">{{caption}}</div>
+                    <div v-for="field in Object.keys(importfields)" class ="form-group col-md-2" style="margin-right: 20px">
                         <label>{{field}}</label>
                         <select class ="form-control fixed-width" v-model="importfields[field]" v-on:change="selectedFieldsChanged">
                             <option disabled value="">Kies een kolom</option>
